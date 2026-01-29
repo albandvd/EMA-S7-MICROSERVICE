@@ -1,0 +1,70 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: User api
+  license:
+    name: MIT
+servers:
+  - url: http://localhost:3000
+paths:
+  /user:
+    get:
+      summary: List all users
+      operationId: User
+      tags:
+        - user
+      responses:
+        '200':
+          description: A user list was found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      summary: Create a user
+      operationId: CreateUser
+      tags:
+        - user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+  /user/{id}:
+    get:
+      summary: Info for a user
+      operationId: getUser
+      tags:
+        - user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The user id
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A user was found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+components:
+  schemas:
+    User:
+      required:
+        - id
+        - login
+        - password
