@@ -1,0 +1,56 @@
+openapi: 3.0.0
+info:
+  title: Combat Service API
+  description: Service de calcul des combats
+  version: 1.2.0
+
+paths:
+  /fight:
+    post:
+      summary: Calcule d'un combat entre un héros et un monstre via leurs IDs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [heroId, monsterId]
+              properties:
+                heroId:
+                  type: string
+                  example: "hero_assassin_01"
+                monsterId:
+                  type: string
+                  example: "gobelin_05"
+      responses:
+        '200':
+          description: Résultat du combat avec détail des tours et or récupéré.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CombatSummary'
+        '404':
+          description: Stats introuvables dans le cache Redis local.
+
+components:
+  schemas:
+    CombatSummary:
+      type: object
+      properties:
+        winner:
+          type: string
+          enum: [hero, monster]
+        winnerId:
+          type: string
+          example: hero_assassin_01
+        finalHeroHp:
+          type: integer
+          description: Points de vie restants du héros.
+        finalHeroGold:
+          type: integer
+          description: Or du héro .
+        battleLog:
+          type: array
+          items:
+            type: string
+          description: "Chronologie : calcul de vitesse, dégâts infligés et réduction par RES."
