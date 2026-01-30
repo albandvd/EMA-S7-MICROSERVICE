@@ -1,3 +1,3 @@
-export interface DialogueRepositoryPort {
+export interface DialogRepositoryPort {
 	getRandomDialogue(): string;
 }
