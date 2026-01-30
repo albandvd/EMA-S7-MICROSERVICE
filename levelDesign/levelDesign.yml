@@ -26,12 +26,16 @@ paths:
                 $ref: '#/components/schemas/DungeonMap'
   /:
     get:
-      summary: Hello world!
-      description: Retourne Hello World!
-      operationId: helloWorld
+      summary: Health Check
+      description: Retourne un simple message de bienvenue.
       responses:
         '200':
-          description: Hello world!
+          description: Service en ligne.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Hello World!"
          
 components:
   schemas:

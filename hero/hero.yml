@@ -1,0 +1,243 @@
+openapi: 3.0.0
+info:
+  title: Hero Service API
+  description: Microservice de gestion des héros. Gère les stats, la classe et l'inventaire.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3005
+
+paths:
+  /:
+    get:
+      summary: Health Check
+      description: Retourne un simple message de bienvenue.
+      responses:
+        '200':
+          description: Service en ligne.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Hello World!"
+
+  /hero:
+    get:
+      tags:
+        - Hero
+      summary: Récupérer tous les héros
+      description: Renvoie la liste complète des héros enregistrés.
+      operationId: getAllHeroes
+      responses:
+        '200':
+          description: Liste récupérée avec succès.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Hero'
+    
+    post:
+      tags:
+        - Hero
+      summary: Créer un nouveau héros
+      description: Crée un héros avec ses stats initiales.
+      operationId: createHero
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHeroRequest'
+      responses:
+        '201':
+          description: Héros créé avec succès.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hero'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /hero/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: L'identifiant unique du héros.
+
+    get:
+      tags:
+        - Hero
+      summary: Récupérer un héros par son ID
+      operationId: getHeroById
+      responses:
+        '200':
+          description: Héros trouvé.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hero'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Hero
+      summary: Mettre à jour un héros
+      description: >
+      Permet de modifier les stats, l'or ou l'inventaire (ex: après un combat ou un achat).
+      operationId: updateHero
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHeroRequest'
+      responses:
+        '200':
+          description: Héros mis à jour.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hero'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Hero
+      summary: Supprimer un héros
+      operationId: deleteHero
+      responses:
+        '204':
+          description: Héros supprimé (pas de contenu retourné).
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    HeroClass:
+      type: string
+      enum: [WARRIOR, TANK, ASSASSIN, MAGE]
+      description: La classe du personnage déterminant son style de jeu.
+
+    CreateHeroRequest:
+      type: object
+      required:
+        - name
+        - class
+        - hp
+        - atk
+        - res
+        - speed
+        - gold
+      properties:
+        name:
+          type: string
+          minLength: 3
+          example: "Lancelot"
+        class:
+          $ref: '#/components/schemas/HeroClass'
+        hp:
+          type: integer
+          minimum: 1
+          description: Points de vie max.
+        atk:
+          type: integer
+          description: Points d'attaque.
+        res:
+          type: integer
+          description: Points de résistance.
+        speed:
+          type: integer
+          description: Vitesse d'action.
+        gold:
+          type: integer
+          default: 0
+        inventory:
+          type: array
+          items:
+            type: string
+          description: Liste des IDs des objets possédés.
+          default: []
+
+    UpdateHeroRequest:
+      type: object
+      description: Tous les champs sont optionnels pour permettre des mises à jour partielles (PATCH style via PUT).
+      properties:
+        hp:
+          type: integer
+        atk:
+          type: integer
+        res:
+          type: integer
+        speed:
+          type: integer
+        gold:
+          type: integer
+        inventory:
+          type: array
+          items:
+            type: string
+
+    Hero:
+      type: object
+      required:
+        - id
+        - name
+        - class
+        - hp
+        - atk
+        - res
+        - speed
+        - gold
+        - inventory
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        class:
+          $ref: '#/components/schemas/HeroClass'
+        hp:
+          type: integer
+        atk:
+          type: integer
+        res:
+          type: integer
+        speed:
+          type: integer
+        gold:
+          type: integer
+        inventory:
+          type: array
+          items:
+            type: string
+            description: ID de l'item (référence vers ItemService).
+
+  responses:
+    NotFound:
+      description: La ressource demandée n'existe pas.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Hero not found"
+    BadRequest:
+      description: Les données envoyées sont invalides.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid class type"
