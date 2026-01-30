@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from bcrypt import hashpw, gensalt
 
 from .database import engine, Base, get_db
 from .model import User
@@ -15,7 +16,8 @@ def read_root():
 
 @app.post("/users")
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    user_obj = User(name=user.name, email=user.email, password=user.password)
+    hashpwd = hashpw(user.password.encode('utf-8'), gensalt())
+    user_obj = User(name=user.name, email=user.email, password=hashpwd)
     db.add(user_obj)
     db.commit()
     db.refresh(user_obj)
