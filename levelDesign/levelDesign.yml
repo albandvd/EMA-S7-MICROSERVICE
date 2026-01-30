@@ -1,0 +1,119 @@
+openapi: 3.0.0
+info:
+  title: LevelDesign Service API (Simple)
+  description: >
+    Service minimaliste de génération de donjon.
+    Il crée une série de 5 à 10 salles avec une difficulté croissante (HP/Dégâts des monstres)
+    basée uniquement sur l'index de la salle.
+  version: 1.0.0
+servers:
+  - url: http://leveldesign-service:3000/api/v1
+
+paths:
+  /generate:
+    post:
+      summary: Générer un donjon aléatoire
+      description: >
+        Crée une nouvelle structure de donjon. Aucune configuration n'est requise.
+        Le service décide aléatoirement de la longueur et des monstres.
+      operationId: generateDungeon
+      # Plus de requestBody ici, c'est direct !
+      responses:
+        '200':
+          description: Le donjon a été généré avec succès.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DungeonMap'
+
+components:
+  schemas:
+    # --- OBJETS MÉTIER (STATS) ---
+    BattleStats:
+      type: object
+      required:
+        - hp
+        - atk
+        - res
+        - vit
+        - gold
+      properties:
+        hp:
+          type: integer
+          example: 50
+        atk:
+          type: integer
+          example: 5
+        res:
+          type: integer
+          example: 2
+        vit:
+          type: integer
+          example: 10
+        gold:
+          type: integer
+          description: Or gagné à la fin du combat.
+          example: 15
+
+    # --- OBJETS MÉTIER (CONTENU) ---
+    Monster:
+      type: object
+      description: Les données du monstre figées pour cette partie.
+      required:
+        - name
+        - stats
+      properties:
+        refId:
+          type: string
+          description: "ID technique (ex: rat_01)."
+        name:
+          type: string
+          description: "Nom affiché (ex: Rat d'égout)."
+        stats:
+          $ref: '#/components/schemas/BattleStats'
+
+    Room:
+      type: object
+      required:
+        - id
+        - index
+        - dialogue
+      properties:
+        id:
+          type: string
+          format: uuid
+        index:
+          type: integer
+          description: Position dans le donjon (0, 1, 2...). Sert d'indicateur de progression.
+        type:
+          type: string
+          enum: [START, COMBAT, BOSS, REWARD]
+          default: COMBAT
+        dialogue:
+          type: string
+          example: "Un courant d'air froid vous fait frissonner."
+        monster:
+          $ref: '#/components/schemas/Monster'
+          nullable: true
+          description: Présent si c'est une salle de combat.
+        nextRoomIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    # --- OBJET RACINE ---
+    DungeonMap:
+      type: object
+      required:
+        - id
+        - rooms
+      properties:
+        id:
+          type: string
+          format: uuid
+        rooms:
+          type: array
+          items:
+            $ref: '#/components/schemas/Room'
+          description: Liste ordonnée des salles générées.
