@@ -1,0 +1,32 @@
+{
+  "name": "basic-node-api",
+  "version": "1.0.0",
+  "description": "Basic API Shell with node typescript and express",
+    "scripts": {
+    "dev": "nodemon src/server.ts",
+    "build": "tsc",
+    "prod": "node dist/server.js"
+  },
+  "keywords": [
+    "api",
+    "node",
+    "express"
+  ],
+  "author": "Richard Reveron",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/morgan": "^1.9.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.0.1",
+    "express": "^5.1.0",
+    "http-status-codes": "^2.3.0",
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.10"
+  }
+}
