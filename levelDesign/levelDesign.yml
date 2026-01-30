@@ -2,9 +2,9 @@ openapi: 3.0.0
 info:
   title: LevelDesign Service API (Simple)
   description: >
-    Service minimaliste de génération de donjon.
-    Il crée une série de 5 à 10 salles avec une difficulté croissante (HP/Dégâts des monstres)
-    basée uniquement sur l'index de la salle.
+    Service de génération de donjon.
+    Il crée une série de 5 à 10 salles avec une difficulté croissante
+    basée sur l'index de la salle.
   version: 1.0.0
 servers:
   - url: http://leveldesign-service:3000/api/v1
@@ -17,7 +17,6 @@ paths:
         Crée une nouvelle structure de donjon. Aucune configuration n'est requise.
         Le service décide aléatoirement de la longueur et des monstres.
       operationId: generateDungeon
-      # Plus de requestBody ici, c'est direct !
       responses:
         '200':
           description: Le donjon a été généré avec succès.
@@ -25,10 +24,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DungeonMap'
-
+  /:
+    get:
+      summary: Hello world!
+      description: Retourne Hello World!
+      operationId: helloWorld
+      responses:
+        '200':
+          description: Hello world!
+         
 components:
   schemas:
-    # --- OBJETS MÉTIER (STATS) ---
     BattleStats:
       type: object
       required:
@@ -52,10 +58,9 @@ components:
           example: 10
         gold:
           type: integer
-          description: Or gagné à la fin du combat.
+          description: Or gagné en tuant le monstre.
           example: 15
 
-    # --- OBJETS MÉTIER (CONTENU) ---
     Monster:
       type: object
       description: Les données du monstre figées pour cette partie.
@@ -63,7 +68,7 @@ components:
         - name
         - stats
       properties:
-        refId:
+        id:
           type: string
           description: "ID technique (ex: rat_01)."
         name:
@@ -85,24 +90,19 @@ components:
         index:
           type: integer
           description: Position dans le donjon (0, 1, 2...). Sert d'indicateur de progression.
-        type:
-          type: string
-          enum: [START, COMBAT, BOSS, REWARD]
-          default: COMBAT
         dialogue:
           type: string
           example: "Un courant d'air froid vous fait frissonner."
         monster:
           $ref: '#/components/schemas/Monster'
           nullable: true
-          description: Présent si c'est une salle de combat.
+          description: Monstre dans la salle du donjon
         nextRoomIds:
           type: array
           items:
             type: string
             format: uuid
 
-    # --- OBJET RACINE ---
     DungeonMap:
       type: object
       required:
