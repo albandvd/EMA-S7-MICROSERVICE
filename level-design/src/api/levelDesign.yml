@@ -10,7 +10,7 @@ servers:
   - url: http://localhost:3007/
 
 paths:
-  /generate:
+  /dungeon/generate:
     post:
       summary: Générer un donjon aléatoire
       description: >

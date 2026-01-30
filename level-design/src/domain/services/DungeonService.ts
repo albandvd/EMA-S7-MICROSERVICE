@@ -1,18 +1,19 @@
 import { DungeonServicePort } from "../../application/ports/inbound/DungeonServicePort";
 import { MonsterRepositoryPort } from "../../application/ports/outbound/MonsterRepositoryPort";
-import { DialogueRepositoryPort } from "../../application/ports/outbound/DialogRepositoryPort";
+import { DialogRepositoryPort } from "../../application/ports/outbound/DialogRepositoryPort";
 import { Dungeon } from "../models/Dungeon";
 import { Room } from "../models/Room";
 import { v4 as uuidv4 } from "uuid";
 import { Monster } from "../models/Monster";
 import { BattleStats } from "../models/BattleStats";
+import { GenerationError } from "../errors/GenerationError";
 
 export class DungeonService implements DungeonServicePort {
 	private static readonly MAX_DUNGEON_SIZE = 10;
 	private static readonly MIN_DUNGEON_SIZE = 5;
 	constructor(
 		private readonly monsterRepo: MonsterRepositoryPort,
-		private readonly dialogRepo: DialogueRepositoryPort
+		private readonly dialogRepo: DialogRepositoryPort
 	) {}
 
 	async generateDungeon(): Promise<Dungeon> {
@@ -31,19 +32,30 @@ export class DungeonService implements DungeonServicePort {
 
 			let monster: Monster | null = null;
 
-			if (isBossRoom) {
-				monster = this.scaleMonster(this.monsterRepo.getBossTemplate(), i);
-			} else {
-				monster = this.scaleMonster(
-					this.monsterRepo.getRandomMonsterTemplate(),
-					i
+			try {
+				if (isBossRoom) {
+					monster = this.scaleMonster(this.monsterRepo.getBossTemplate(), i);
+				} else {
+					monster = this.scaleMonster(
+						this.monsterRepo.getRandomMonsterTemplate(),
+						i
+					);
+				}
+			} catch (err) {
+				throw new GenerationError(
+					"Erreur lors de la récupération du monstre/boss"
 				);
+			}
+
+			const dialog: string = this.dialogRepo.getRandomDialogue();
+			if (!dialog) {
+				throw new GenerationError("Erreur lors de la récupération du dialogue");
 			}
 
 			const room: Room = {
 				id: roomId,
 				index: i,
-				dialogue: this.dialogRepo.getRandomDialogue(),
+				dialogue: dialog,
 				monster: monster,
 				nextRoomIds: [],
 			};
