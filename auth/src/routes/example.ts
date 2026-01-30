@@ -1,9 +1,9 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { healthCheck } from "../controllers/example";
 
 const router = Router();
 
-router.get("/health-check", (_req, res) => {
+router.get("/health-check", (_req: Request, res: Response) => {
 	res.send(healthCheck());
 });
 
