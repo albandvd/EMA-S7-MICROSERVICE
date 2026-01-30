@@ -2,7 +2,7 @@ export const fight = (hero, monster) => {
     let logs = [];
     let tour = 0;
 
-    let attacker = (hero.vit >= monster.vit) ? 'hero' : 'monster';
+    let attacker = (hero.speed >= monster.speed) ? 'hero' : 'monster';
     logs.push(`Combat commence ! Initiative : ${attacker}`);
 
     while (hero.hp > 0 && monster.hp > 0) {

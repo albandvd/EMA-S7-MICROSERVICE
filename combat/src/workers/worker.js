@@ -1,5 +1,5 @@
 import amqp from 'amqplib';
-import { fight } from "./combatLogic.js";
+import { fight } from "../logic/combatLogic.js";
 
 export const startWorker = async () => {
     try {

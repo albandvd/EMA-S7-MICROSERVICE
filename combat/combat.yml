@@ -3,6 +3,8 @@ info:
   title: Combat Service API
   description: Service de calcul des combats
   version: 1.2.0
+servers:
+  - url: http://localhost:3004
 
 paths:
   /:
