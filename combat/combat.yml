@@ -5,6 +5,17 @@ info:
   version: 1.2.0
 
 paths:
+  /:
+    get:
+      summary: Retourne un message de bienvenue.
+      responses:
+        '200':
+          description: Message de bienvenue.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Hello World from Combat Service"
   /fight:
     post:
       summary: Calcule d'un combat entre un héros et un monstre via leurs IDs.
