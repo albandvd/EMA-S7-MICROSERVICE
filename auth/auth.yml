@@ -1,0 +1,46 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Auth service
+  description: API for auth
+  license:
+    name: MIT
+servers:
+  - url: http://localhost:3001
+paths:
+  /login:
+    post:
+      summary: login
+      operationId: login
+      tags: 
+        - login
+      responses: 
+        '201':
+          description: Login succesfully
+        '401':
+          description: invalid credentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUser' 
+
+  /checkAuth:
+    get:
+      summary: checkAuth
+      operationId: checkAuth
+      tags: 
+        - checkAuth
+      responses: 
+        '200':
+          description: Auth valid
+        '401':
+          description: Auth invalid
+          
+components:
+  schemas:
+    CreateUser:
+      required:
+        - login
+        - password

@@ -3,8 +3,21 @@ info:
   title: Combat Service API
   description: Service de calcul des combats
   version: 1.2.0
+servers:
+  - url: http://localhost:3004
 
 paths:
+  /:
+    get:
+      summary: Retourne un message de bienvenue.
+      responses:
+        '200':
+          description: Message de bienvenue.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Hello World from Combat Service"
   /fight:
     post:
       summary: Calcule d'un combat entre un héros et un monstre via leurs IDs.

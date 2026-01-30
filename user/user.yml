@@ -1,7 +1,8 @@
 openapi: "3.0.0"
 info:
   version: 1.0.0
-  title: User api
+  title: User service
+  description: API for user management
   license:
     name: MIT
 servers:
