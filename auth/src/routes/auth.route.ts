@@ -8,9 +8,9 @@ router.get("/health-check", (_req: Request, res: Response) => {
     res.send(healthCheck());
 });
 
-router.post("/login", async (req: Request, res: Response) => {
+router.post("/login", async (_req: Request, res: Response) => {
     try {
-        const result = await login(req.body);
+        const result = await login(_req.body);
         res.send(result);
     } catch (error) {
         res.status(500).send({ message: "Internal server error", error });

@@ -6,6 +6,7 @@ import router from "./routes/auth.route";
 
 const app = express();
 
+app.use(express.json());
 app.use(morgan("combined"));
 app.use(cors());
 app.use(router);
