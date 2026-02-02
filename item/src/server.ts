@@ -2,7 +2,7 @@ import cors from "cors";
 import express from "express";
 import morgan from "morgan";
 import { notFound } from "./middlewares/notFound";
-import router from "./routes/auth.route";
+import router from "./routes/item.route";
 
 const app = express();
 
@@ -13,6 +13,6 @@ app.use(router);
 
 app.use(notFound);
 
-app.listen(3001, () => {
-	console.log(`Server running on port 3001`);
+app.listen(3006, () => {
+	console.log(`Server running on port 3006`);
 });
