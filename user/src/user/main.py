@@ -16,7 +16,7 @@ def read_root():
 
 @app.post("/users")
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    hashpwd = hashpw(user.password.encode('utf-8'), gensalt())
+    hashpwd = hashpw(user.password.encode('utf-8'), gensalt(10))
     user_obj = User(name=user.name, email=user.email, password=hashpwd)
     db.add(user_obj)
     db.commit()
