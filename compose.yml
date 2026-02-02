@@ -9,7 +9,7 @@ services:
       - user-service
       - combat-service
       - item-service
-      - levelDesign-service
+      - leveldesign-service
 
   auth-service:
     container_name: ema-s7-micro-auth-service
@@ -43,8 +43,8 @@ services:
     depends_on:
       - item-db
 
-  levelDesign-service:
-    container_name: ema-s7-micro-levelDesign-service
+  leveldesign-service:
+    container_name: ema-s7-micro-leveldesign-service
     build: ./level-design
     ports:
       - "3007:3007"

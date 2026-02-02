@@ -13,7 +13,7 @@ FROM node:20-alpine
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --omit=dev
+RUN pnpm install --prod --frozen-lockfile
 COPY --from=builder /app/dist ./dist
 
 EXPOSE 3006
