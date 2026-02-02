@@ -1,0 +1,99 @@
+openapi: 3.0.0
+info:
+  title: Save Service API
+  description: Gestion de l'état de progression des joueurs (Dungeon State).
+  version: 1.0.0
+servers:
+  - url: http://localhost:3009
+
+paths:
+  /save:
+    post:
+      summary: Créer une sauvegarde
+      description: Appelé par GameService lors du initializeGame.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DungeonSave'
+      responses:
+        '201':
+          description: Sauvegarde créée.
+
+  /save/{userId}:
+    get:
+      summary: Récupérer la sauvegarde
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: État de la session retourné.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DungeonSave'
+        '404':
+          description: Aucune partie en cours pour cet utilisateur.
+
+    put:
+      summary: Mettre à jour la progression
+      description: Utilisé pour incrémenter currentRoomIndex.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentRoomIndex:
+                  type: integer
+      responses:
+        '200':
+          description: Progression mise à jour.
+
+    delete:
+      summary: Supprimer une sauvegarde
+      description: Appelé en cas de GAME_OVER ou DUNGEON_CLEARED.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sauvegarde supprimée.
+
+components:
+  schemas:
+    DungeonSave:
+      type: object
+      required:
+        - userId
+        - rooms
+        - currentRoomIndex
+      properties:
+        userId:
+          type: string
+        dungeonId:
+          type: string
+        currentRoomIndex:
+          type: integer
+          default: 0
+        status:
+          type: string
+          example: "ACTIVE"
+        rooms:
+          type: array
+          items:
+            type: object
