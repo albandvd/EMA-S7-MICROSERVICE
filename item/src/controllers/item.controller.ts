@@ -84,3 +84,24 @@ export const deleteItem = async (req: Request, res: Response) => {
     }
   }
 };
+
+export const getRandomItems = async (req: Request, res: Response) => {
+  try {
+    const nb = Number.parseInt(String(req.params.nb), 10);
+    if (isNaN(nb) || nb <= 0) {
+      return res.status(400).json({ error: 'Invalid number of items requested' });
+    }
+
+    const items = await prisma.item.findMany();
+    if (items.length === 0) {
+      return res.status(404).json({ error: 'No items available' });
+    }
+
+    const shuffledItems = items.sort(() => 0.5 - Math.random());
+    const selectedItems = shuffledItems.slice(0, Math.min(nb, items.length));
+
+    res.json(selectedItems);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch random items' });
+  }
+}
