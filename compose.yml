@@ -35,11 +35,24 @@ services:
     depends_on:
       - rabbitmq
 
+  hero-service:
+    container_name: ema-s7-micro-hero-service
+    build: ./hero
+    ports:
+      - "3005:3005"
+    environment:
+      DATABASE_URL: "postgresql://user:password@hero-db:6500/herodb?schema=public"
+      PORT: 3005
+    depends_on:
+      - hero-db
+
   item-service:
     container_name: ema-s7-micro-item-service
     build: ./item
     ports:
       - "3006:3006"
+    environment:
+      DATABASE_URL: "postgresql://itemuser:itempassword@item-db:5432/itemdb?schema=public"
     depends_on:
       - item-db
 
@@ -81,6 +94,25 @@ services:
       - item-db-data:/var/lib/postgresql/data/
     restart: always
 
+  hero-db:
+    container_name: ema-s7-micro-hero-db
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=herodb
+    ports:
+      - 6500:5432
+    volumes:
+      - hero-db-data:/var/lib/postgresql/data/s
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d herodb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
 volumes:
   user-db-data:
   item-db-data:
+  hero-db-data:
