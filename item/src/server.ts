@@ -1,8 +1,8 @@
 import cors from "cors";
 import express from "express";
 import morgan from "morgan";
-import { notFound } from "./middlewares/notFound";
-import router from "./routes/item.route";
+import { notFound } from "./middlewares/notFound.js";
+import router from "./routes/item.route.js";
 
 const app = express();
 
