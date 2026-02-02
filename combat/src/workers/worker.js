@@ -3,7 +3,7 @@ import { fight } from "../logic/combatLogic.js";
 
 export const startWorker = async () => {
 
-    const RABBIT_URL = process.env.RABBIT_URL || 'amqp://localhost';
+    const RABBIT_URL = process.env.RABBIT_URL || 'amqp://rabbitmq';
 
     let connection;
     // Boucle de reconnexion
