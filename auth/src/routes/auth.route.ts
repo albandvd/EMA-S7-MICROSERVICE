@@ -3,11 +3,11 @@ import { login, healthCheck } from "../controllers/auth.controller";
 
 const router = Router();
 
-router.get("/health-check", (_req: Request, res: Response) => {
+router.get("/auth/health-check", (_req: Request, res: Response) => {
     res.send(healthCheck());
 });
 
-router.post("/login", async (_req: Request, res: Response) => {
+router.post("/auth/login", async (_req: Request, res: Response) => {
     try {
         const result = await login(_req.body);
         res.cookie('token', result.token, { httpOnly: true, secure: true });
