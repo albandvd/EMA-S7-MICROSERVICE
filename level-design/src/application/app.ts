@@ -12,7 +12,7 @@ app.use(express.json());
 
 const file = fs.readFileSync(
 	require.resolve("../api/levelDesign.yml"),
-	"utf-8"
+	"utf-8",
 );
 const swaggerDocument = YAML.parse(file);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
@@ -22,14 +22,14 @@ const inMemoryMonsterRepo = new InMemoryMonsterRepository();
 
 const dungeonService = new DungeonService(
 	inMemoryMonsterRepo,
-	inMemoryDialogRepo
+	inMemoryDialogRepo,
 );
 
 const dungeonController = new DungeonController(dungeonService);
 
 dungeonController.registerRoutes(app);
 
-app.get("/", (req, res) => {
+app.get("/levelDesign", (req, res) => {
 	res.set("Content-Type", "text/plain");
 	res.send("Hello World!");
 });
