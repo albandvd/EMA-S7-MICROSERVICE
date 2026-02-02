@@ -6,6 +6,7 @@ export const getItems = async (req: Request, res: Response) => {
     const items = await prisma.item.findMany();
     res.json(items);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Failed to fetch items' });
   }
 };
@@ -25,6 +26,7 @@ export const createItem = async (req: Request, res: Response) => {
     });
     res.status(201).json(item);
   } catch (error) {
+    console.error(error);
     res.status(400).json({ error: 'Invalid input' });
   }
 };
@@ -40,6 +42,7 @@ export const getItemById = async (req: Request, res: Response) => {
     }
     res.json(item);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Failed to fetch item' });
   }
 };
@@ -102,6 +105,7 @@ export const getRandomItems = async (req: Request, res: Response) => {
 
     res.json(selectedItems);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Failed to fetch random items' });
   }
 }
