@@ -7,7 +7,9 @@ services:
     depends_on:
       - auth-service
       - user-service
+      - game-service
       - combat-service
+      - hero-service
       - item-service
       - leveldesign-service
 
@@ -27,13 +29,23 @@ services:
     depends_on:
       - user-db
   
+  game-service:
+    container_name: ema-s7-micro-game-service
+    build: ./game
+    ports:
+      - "3003:3003"
+    depends_on:
+      - hero-service
+      - rabbitmq-service
+      - combat-service
+
   combat-service:
     container_name: ema-s7-micro-combat-service
     build: ./combat
     ports:
       - "3004:3004"
     depends_on:
-      - rabbitmq
+      - rabbitmq-service
 
   hero-service:
     container_name: ema-s7-micro-hero-service
@@ -62,7 +74,7 @@ services:
     ports:
       - "3007:3007"
 
-  rabbitmq:
+  rabbitmq-service:
     container_name: ema-s7-micro-rabbitmq-service
     image: rabbitmq:3.10-management
     ports:
