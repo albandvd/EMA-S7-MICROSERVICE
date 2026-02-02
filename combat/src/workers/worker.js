@@ -2,8 +2,27 @@ import amqp from 'amqplib';
 import { fight } from "../logic/combatLogic.js";
 
 export const startWorker = async () => {
+
+    const RABBIT_URL = process.env.RABBIT_URL || 'amqp://localhost';
+
+    let connection;
+    // Boucle de reconnexion
+    let connected = false;
+    while (!connected) {
+        try {
+            console.log(" [AMQP] Tentative de connexion à RabbitMQ...");
+            connection = await amqp.connect(RABBIT_URL);
+            
+            console.log(" [AMQP] Connecté avec succès !");
+            connected = true;
+        } catch (err) {
+            console.error(` [!] Échec de connexion : ${err.message}`);
+            console.log(" [!] Nouvelle tentative dans 5s...");
+            await new Promise(res => setTimeout(res, 5000)); 
+        }
+    }
+
     try {
-        const connection = await amqp.connect('amqp://localhost');
         const channel = await connection.createChannel();
         const queue = 'CombatQ';
 
@@ -14,16 +33,16 @@ export const startWorker = async () => {
             try {
                 const data = JSON.parse(msg.content.toString());
                 
-                // Vérification de sécurité avant d'accéder aux propriétés
                 if (!data.hero || !data.monster) {
                     console.error(" [!] Message mal formé reçu :", data);
-                    return channel.ack(msg); // On acquitte quand même pour ne pas bloquer la queue
+                    return channel.ack(msg); 
                 }
 
                 console.log(` [AMQP] Combat reçu : ${data.hero.id || 'Inconnu'} vs ${data.monster.name}`);
 
                 const result = fight(data.hero, data.monster);
-                // console.log(result);
+                console.log(result);
+                console.log(msg.properties);
                 
                 if (msg.properties.replyTo) {
                     channel.sendToQueue(msg.properties.replyTo, Buffer.from(JSON.stringify(result)), {

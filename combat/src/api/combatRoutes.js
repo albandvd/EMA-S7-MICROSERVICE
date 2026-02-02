@@ -3,11 +3,11 @@ import { fight } from '../logic/combatLogic.js';
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/combat/', (req, res) => {
     res.send("Combat Service API is alive and listening to RabbitMQ");
 });
 
-router.post('/fight-manual', (req, res) => {
+router.post('/combat/fight-manual', (req, res) => {
     const { hero, monster } = req.body;
 
     if (!hero || !monster) {
