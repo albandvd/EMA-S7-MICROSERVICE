@@ -1,0 +1,42 @@
+{
+	"name": "level-design",
+	"version": "1.0.0",
+	"description": "",
+	"main": "dist/server.js",
+	"scripts": {
+		"dev": "ts-node-dev --respawn --transpile-only src/application/server.ts",
+		"build": "rm -rf dist/ && tsc -p tsconfig.json && mkdir -p dist/api && cp src/api/levelDesign.yml dist/api/levelDesign.yml",
+		"start": "node dist/application/server.js",
+		"lint": "eslint . --ext .ts",
+		"test": "jest --coverage"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"type": "commonjs",
+	"dependencies": {
+		"express": "^4.22.1",
+		"swagger-ui-express": "5.0.1",
+		"uuid": "^9.0.1",
+		"yaml": "2.8.2"
+	},
+	"devDependencies": {
+		"@jest/types": "^30.2.0",
+		"@stryker-mutator/core": "^9.4.0",
+		"@stryker-mutator/jest-runner": "^9.4.0",
+		"@types/express": "^4.17.25",
+		"@types/jest": "^29.5.14",
+		"@types/node": "^20.19.30",
+		"@types/supertest": "^6.0.3",
+		"@types/swagger-ui-express": "4.1.8",
+		"@types/uuid": "^9.0.8",
+		"@typescript-eslint/eslint-plugin": "^6.21.0",
+		"@typescript-eslint/parser": "^6.21.0",
+		"eslint": "^8.57.1",
+		"jest": "^29.7.0",
+		"supertest": "^7.2.2",
+		"ts-jest": "^29.4.6",
+		"ts-node-dev": "^2.0.0",
+		"typescript": "^5.9.3"
+	}
+}
