@@ -1,13 +1,18 @@
 services:
   nginx:
+    container_name: ema-s7-micro-nginx-service
     build: ./nginx
     ports:
       - "3000:3000"
     depends_on:
       - auth-service
       - user-service
+      - combat-service
+      - item-service
+      - leveldesign-service
 
   auth-service:
+    container_name: ema-s7-micro-auth-service
     build: ./auth
     ports: 
       - "3001:3001"
@@ -15,13 +20,44 @@ services:
       - user-db
     
   user-service: 
+    container_name: ema-s7-micro-user-service
     build: ./user
     ports:
       - "3002:3002"
     depends_on:
       - user-db
+  
+  combat-service:
+    container_name: ema-s7-micro-combat-service
+    build: ./combat
+    ports:
+      - "3004:3004"
+    depends_on:
+      - rabbitmq
+
+  item-service:
+    container_name: ema-s7-micro-item-service
+    build: ./item
+    ports:
+      - "3006:3006"
+    depends_on:
+      - item-db
+
+  leveldesign-service:
+    container_name: ema-s7-micro-leveldesign-service
+    build: ./level-design
+    ports:
+      - "3007:3007"
+
+  rabbitmq:
+    container_name: ema-s7-micro-rabbitmq-service
+    image: rabbitmq:3.10-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
 
   user-db:
+    container_name: ema-s7-micro-user-db
     image: mysql:oraclelinux9
     restart: always
     environment:
@@ -31,4 +67,20 @@ services:
       - "3306:3306"
     volumes:
       - user-db-data:/var/lib/mysql
-    container_name: user-mysql
+  
+  item-db:
+    container_name: ema-s7-micro-item-db
+    image: postgres:alpine3.23
+    environment:
+      - POSTGRES_USER=itemuser
+      - POSTGRES_PASSWORD=itempassword
+      - POSTGRES_DB=itemdb
+    ports:
+      - 5432:5432
+    volumes:
+      - item-db-data:/var/lib/postgresql/data/
+    restart: always
+
+volumes:
+  user-db-data:
+  item-db-data:

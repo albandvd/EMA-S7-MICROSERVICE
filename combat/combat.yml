@@ -7,7 +7,7 @@ servers:
   - url: http://localhost:3004
 
 paths:
-  /:
+  /combat:
     get:
       summary: Retourne un message de bienvenue.
       responses:
@@ -18,7 +18,7 @@ paths:
               schema:
                 type: string
                 example: "Hello World from Combat Service"
-  /fight:
+  /combat/fight-manual:
     post:
       summary: Calcule d'un combat entre un héros et un monstre via leurs IDs.
       requestBody:

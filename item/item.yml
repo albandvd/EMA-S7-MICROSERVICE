@@ -107,6 +107,32 @@ paths:
           description: Item deleted (No Content)
         '404':
           description: Item not found
+  /items/random/{nb}:
+    parameters:
+      - name: nb
+        in: path
+        description: Number of random items to retrieve
+        required: true
+        schema:
+          type: integer
+          format: int32
+    get:
+      summary: Get random items
+      description: Returns a specified number of random items.
+      operationId: getRandomItems
+      tags:
+        - items
+      responses:
+        '200':
+          description: A list of random items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+        '400':
+          description: Invalid number requested
 
 components:
   schemas:

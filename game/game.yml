@@ -1,0 +1,162 @@
+openapi: 3.0.0
+info:
+  title: Game Orchestrator Service
+  description: >
+    Service central pilotant le gameplay. Il orchestre les appels entre le LevelDesign, 
+    le HeroService, le CombatService et le SauvegardeService.
+  version: 1.5.0
+
+servers:
+  - url: http://localhost:3003
+
+paths:
+  /game/select-class:
+    post:
+      summary: "Choix de la classe"
+      description: "Permet de présélectionner une classe avant de lancer la partie."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, className]
+              properties:
+                userId: { type: string }
+                className:
+                  $ref: '#/components/schemas/HeroClass'
+      responses:
+        '200':
+          description: "Classe validée"
+
+  /game/start:
+    post:
+      summary: "Nouvelle Partie"
+      description: "Initialise le héros (RabbitMQ), génère le donjon et crée la sauvegarde."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, name]
+              properties:
+                userId: { type: string, format: uuid }
+                name: { type: string, example: "Lancelot" }
+                heroClass: { $ref: '#/components/schemas/HeroClass' }
+      responses:
+        '200':
+          description: "Donjon généré et première salle renvoyée"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameInitResponse'
+
+  /game/next-step:
+    post:
+      summary: "Avancer dans le donjon"
+      description: "Récupère l'état de la partie, gère le combat éventuel et passe à la salle suivante."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId: { type: string }
+      responses:
+        '200':
+          description: "Résultat du tour (exploration, combat ou fin)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameState'
+
+  /game/rewards:
+    get:
+      summary: "Récupérer les récompenses de fin"
+      description: "Propose 5 items aléatoires si le donjon est terminé."
+      responses:
+        '200':
+          description: "Liste d'items"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+
+  /game/claim-reward:
+    post:
+      summary: "Choisir une récompense"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, selectedItem]
+              properties:
+                userId: { type: string }
+                selectedItem: { $ref: '#/components/schemas/Item' }
+      responses:
+        '200':
+          description: "Item ajouté au héros"
+
+components:
+  schemas:
+    HeroClass:
+      type: string
+      enum: [WARRIOR, TANK, ASSASSIN]
+    
+    GameInitResponse:
+      type: object
+      properties:
+        status: { type: string, example: "STARTING" }
+        userId: { type: string }
+        dungeonId: { type: string }
+        currentRoom: { $ref: '#/components/schemas/Room' }
+        message: { type: string }
+
+    GameState:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [EXPLORING, GAME_OVER, DUNGEON_CLEARED]
+        heroHp: { type: integer }
+        goldLooted: { type: integer }
+        currentRoom: { $ref: '#/components/schemas/Room' }
+        log:
+          type: array
+          items: { type: string }
+        message: { type: string }
+
+    Room:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        index: { type: integer }
+        dialogue: { type: string }
+        monster: { $ref: '#/components/schemas/Monster' }
+
+    Monster:
+      type: object
+      properties:
+        name: { type: string }
+        stats:
+          type: object
+          properties:
+            hp: { type: integer }
+            atk: { type: integer }
+            gold: { type: integer }
+            vit: { type: integer }
+
+    Item:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        effect: { type: string }
+        value: { type: integer }
