@@ -20,6 +20,22 @@ services:
       - "3002:3002"
     depends_on:
       - user-db
+  
+  levelDesign-service:
+    build: ./level-design
+    ports:
+      - "3007:3007"
+  
+  combat-service:
+    build: ./combat
+    ports:
+      - "3004:3004"
+
+  rabbitmq:
+    image: rabbitmq:3.10-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
 
   user-db:
     image: mysql:oraclelinux9
