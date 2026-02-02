@@ -1,43 +1,40 @@
 # --- Étape 1 : Builder ---
 FROM node:20-alpine AS builder
-
-# Installation de pnpm globalement
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
-
-# Copie des fichiers de configuration pnpm
-# On copie pnpm-lock.yaml pour que pnpm puisse faire une installation stricte
 COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma
 
-# Installation des dépendances (équivalent de npm ci)
 RUN pnpm install --frozen-lockfile
 
-# Copie du reste du code et build
+# Génère ./generated à la racine
+RUN pnpm exec prisma generate
+
 COPY . .
 RUN pnpm run build
 
 # --- Étape 2 : Runner ---
 FROM node:20-alpine
-
-# On réinstalle pnpm dans l'image finale
 RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN apk -U add openssl
 
 WORKDIR /app
-
 ENV NODE_ENV=production
 
 COPY package.json pnpm-lock.yaml ./
-
-# Installation des dépendances de production uniquement
 RUN pnpm install --prod --frozen-lockfile
 
-# Récupération du build et du YAML
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/src/api ./dist/api
+# 1. On copie le contenu de dist (qui contient src et generated compilés)
+# Comme ton tree montre que dist contient déjà 'generated' et 'src', 
+# copier le contenu de dist à la racine /app respecte ton architecture.
+COPY --from=builder /app/dist ./
+
+# 2. On copie aussi le dossier prisma original pour les migrations
+COPY prisma ./prisma
 
 USER node
-
 EXPOSE 3005
 
-CMD ["node", "dist/application/server.js"]
+# Ton server.js est dans /app/src/application/server.js (après la copie du contenu de dist)
+CMD ["node", "src/application/server.js"]

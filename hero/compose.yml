@@ -1,0 +1,36 @@
+services:
+  # Service Base de Données
+  db-hero:
+    image: postgres:15-alpine
+    container_name: db-hero
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: herodb
+    ports:
+      - "6500:5432" # <--- C'est ici que ça change (Host:Container)
+    volumes:
+      - hero_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d herodb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Microservice Hero
+  hero-service:
+    build: .
+    container_name: hero-service
+    ports:
+      - "3005:3005"
+    environment:
+      # Attention : ici on utilise bien 5432 car on est DANS le réseau Docker
+      DATABASE_URL: "postgresql://user:password@db-hero:5432/herodb?schema=public"
+      PORT: 3005
+    depends_on:
+      db-hero:
+        condition: service_healthy
+
+volumes:
+  hero_db_data:

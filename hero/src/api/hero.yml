@@ -7,36 +7,18 @@ servers:
   - url: http://localhost:3005
 
 paths:
-  /:
+  /hero:
     get:
       summary: Health Check
       description: Retourne un simple message de bienvenue.
       responses:
-        '200':
+        "200":
           description: Service en ligne.
           content:
             text/plain:
               schema:
                 type: string
                 example: "Hello World!"
-
-  /hero:
-    get:
-      tags:
-        - Hero
-      summary: Récupérer tous les héros
-      description: Renvoie la liste complète des héros enregistrés.
-      operationId: getAllHeroes
-      responses:
-        '200':
-          description: Liste récupérée avec succès.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Hero'
-    
     post:
       tags:
         - Hero
@@ -48,16 +30,33 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateHeroRequest'
+              $ref: "#/components/schemas/CreateHeroRequest"
       responses:
-        '201':
+        "201":
           description: Héros créé avec succès.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Hero'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                $ref: "#/components/schemas/Hero"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /heroes:
+    get:
+      tags:
+        - Hero
+      summary: Récupérer tous les héros
+      description: Renvoie la liste complète des héros enregistrés.
+      operationId: getAllHeroes
+      responses:
+        "200":
+          description: Liste récupérée avec succès.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Hero"
 
   /hero/{id}:
     parameters:
@@ -75,14 +74,14 @@ paths:
       summary: Récupérer un héros par son ID
       operationId: getHeroById
       responses:
-        '200':
+        "200":
           description: Héros trouvé.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Hero'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/Hero"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
     put:
       tags:
@@ -96,16 +95,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateHeroRequest'
+              $ref: "#/components/schemas/UpdateHeroRequest"
       responses:
-        '200':
+        "200":
           description: Héros mis à jour.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Hero'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/Hero"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
     delete:
       tags:
@@ -113,10 +112,10 @@ paths:
       summary: Supprimer un héros
       operationId: deleteHero
       responses:
-        '204':
+        "204":
           description: Héros supprimé (pas de contenu retourné).
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "404":
+          $ref: "#/components/responses/NotFound"
 
 components:
   schemas:
@@ -130,40 +129,13 @@ components:
       required:
         - name
         - class
-        - hp
-        - atk
-        - res
-        - speed
-        - gold
       properties:
         name:
           type: string
           minLength: 3
           example: "Lancelot"
         class:
-          $ref: '#/components/schemas/HeroClass'
-        hp:
-          type: integer
-          minimum: 1
-          description: Points de vie max.
-        atk:
-          type: integer
-          description: Points d'attaque.
-        res:
-          type: integer
-          description: Points de résistance.
-        speed:
-          type: integer
-          description: Vitesse d'action.
-        gold:
-          type: integer
-          default: 0
-        inventory:
-          type: array
-          items:
-            type: string
-          description: Liste des IDs des objets possédés.
-          default: []
+          $ref: "#/components/schemas/HeroClass"
 
     UpdateHeroRequest:
       type: object
@@ -203,7 +175,7 @@ components:
         name:
           type: string
         class:
-          $ref: '#/components/schemas/HeroClass'
+          $ref: "#/components/schemas/HeroClass"
         hp:
           type: integer
         atk:
