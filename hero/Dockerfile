@@ -1,5 +1,5 @@
 # --- Étape 1 : Builder ---
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
@@ -15,7 +15,7 @@ COPY . .
 RUN pnpm run build
 
 # --- Étape 2 : Runner ---
-FROM node:20-alpine
+FROM node:24-alpine
 RUN corepack enable && corepack prepare pnpm@latest --activate
 RUN apk -U add openssl
 
