@@ -79,6 +79,8 @@ services:
     build: ./save
     ports:
       - "3009:3009"
+    depends_on:
+      - save-db
 
   rabbitmq-service:
     container_name: ema-s7-micro-rabbitmq-service
@@ -147,3 +149,4 @@ volumes:
   user-db-data:
   item-db-data:
   hero-db-data:
+  save-db-data:
