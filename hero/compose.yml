@@ -9,9 +9,10 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: herodb
     ports:
-      - "6500:5432" # <--- C'est ici que ça change (Host:Container)
+      - "6500:5432"
     volumes:
       - hero_db_data:/var/lib/postgresql/data
+      - ./init-scripts/migration.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d herodb"]
       interval: 5s
@@ -25,7 +26,6 @@ services:
     ports:
       - "3005:3005"
     environment:
-      # Attention : ici on utilise bien 5432 car on est DANS le réseau Docker
       DATABASE_URL: "postgresql://user:password@db-hero:5432/herodb?schema=public"
       PORT: 3005
     depends_on:
