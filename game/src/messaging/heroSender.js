@@ -1,6 +1,6 @@
 import amqp from 'amqplib';
 
-const RABBIT_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
+const RABBIT_URL = process.env.RABBITMQ_URL || 'amqp://ema-s7-micro-rabbitmq-service';
 
 // 1. On définit la logique réelle dans un objet
 export const HeroSender = {

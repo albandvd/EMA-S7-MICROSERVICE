@@ -1,7 +1,7 @@
 import amqp from 'amqplib';
 import { HeroServicePort } from '../../application/ports/inbound/HeroServicePort';
 
-const RABBIT_URL = process.env.RABBITMQ_URL || 'amqp://172.17.0.1';
+const RABBIT_URL = process.env.RABBITMQ_URL || 'amqp://ema-s7-micro-rabbitmq-service';
 
 export class HeroConsumer {
     private readonly actionMap: Record<string, (data: any) => Promise<void>>;
