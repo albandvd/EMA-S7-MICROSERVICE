@@ -136,4 +136,72 @@ describe("HeroService", () => {
 			expect(mockRepo.delete).not.toHaveBeenCalled();
 		});
 	});
+
+	describe("getHeroInventory", () => {
+		it("devrait retourner l'inventaire d'un héros existant", async () => {
+			mockRepo.findById.mockResolvedValue(MOCK_HERO);
+
+			const result = await service.getHeroInventory("uuid-123");
+
+			expect(result).toEqual(MOCK_HERO.inventory);
+		});
+
+		it("devrait lancer NotFoundError si le héros n'existe pas", async () => {
+			mockRepo.findById.mockResolvedValue(null);
+
+			await expect(service.getHeroInventory("uuid-inconnu")).rejects.toBeInstanceOf(
+				NotFoundError,
+			);
+		});
+
+		it("devrait lancer NotFoundError si le héros n'existe pas", async () => {
+			mockRepo.findById.mockResolvedValue(null);
+
+			await expect(service.deleteHero("uuid-123")).rejects.toBeInstanceOf(
+				NotFoundError,
+			);
+
+			expect(mockRepo.delete).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("addItemToHero", () => {
+		it("devrait ajouter un item à l'inventaire d'un héros existant", async () => {
+			mockRepo.findById.mockResolvedValue(MOCK_HERO);
+			mockRepo.update.mockResolvedValue({ ...MOCK_HERO, inventory: [...MOCK_HERO.inventory, "Potion"] });
+
+			const result = await service.addItemToHero("uuid-123", "Potion");
+
+			expect(mockRepo.update).toHaveBeenCalledWith("uuid-123", { inventory: [...MOCK_HERO.inventory, "Potion"] });
+			expect(result.inventory).toEqual([...MOCK_HERO.inventory, "Potion"]);
+		});
+
+		it("devrait lancer NotFoundError si le héros n'existe pas", async () => {
+			mockRepo.findById.mockResolvedValue(null);
+
+			await expect(service.addItemToHero("uuid-inconnu", "Potion")).rejects.toBeInstanceOf(
+				NotFoundError,
+			);
+		});
+	});
+
+	describe("removeItemFromHero", () => {
+		it("devrait supprimer un item de l'inventaire d'un héros existant", async () => {
+			mockRepo.findById.mockResolvedValue(MOCK_HERO);
+			mockRepo.update.mockResolvedValue({ ...MOCK_HERO, inventory: MOCK_HERO.inventory.filter(i => i !== "Potion") });
+
+			const result = await service.removeItemFromHero("uuid-123", "Potion");
+
+			expect(mockRepo.update).toHaveBeenCalledWith("uuid-123", { inventory: MOCK_HERO.inventory.filter(i => i !== "Potion") });
+			expect(result.inventory).toEqual(MOCK_HERO.inventory.filter(i => i !== "Potion"));
+		});
+
+		it("devrait lancer NotFoundError si le héros n'existe pas", async () => {
+			mockRepo.findById.mockResolvedValue(null);
+
+			await expect(service.removeItemFromHero("uuid-inconnu", "Potion")).rejects.toBeInstanceOf(
+				NotFoundError,
+			);
+		});
+	});
 });

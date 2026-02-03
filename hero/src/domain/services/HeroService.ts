@@ -69,4 +69,31 @@ export class HeroService implements HeroServicePort {
 
 		await this.heroRepository.delete(id);
 	}
+
+	async getHeroInventory(id: string): Promise<string[]> {
+		return this.heroRepository.findById(id).then(hero => {
+			if (!hero) {
+				throw new NotFoundError(`Héros avec l'ID ${id} introuvable`);
+			}
+			return hero.inventory;
+		});
+	}
+
+	async addItemToHero(id: string, item: string): Promise<Hero> {
+		const hero = await this.heroRepository.findById(id);
+		if (!hero) {
+			throw new NotFoundError(`Héros avec l'ID ${id} introuvable`);
+		}
+		const updatedInventory = [...hero.inventory, item];
+		return await this.heroRepository.update(id, { inventory: updatedInventory });
+	}
+
+	async removeItemFromHero(id: string, itemId: string): Promise<Hero> {
+		const hero = await this.heroRepository.findById(id);
+		if (!hero) {
+			throw new NotFoundError(`Héros avec l'ID ${id} introuvable`);
+		}
+		const updatedInventory = hero.inventory.filter(i => i !== itemId);
+		return await this.heroRepository.update(id, { inventory: updatedInventory });
+	}
 }

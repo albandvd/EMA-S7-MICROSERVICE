@@ -8,12 +8,12 @@ export class HeroConsumer {
 
     constructor(private readonly heroService: HeroServicePort) {
         this.actionMap = {
-            'CREATE_HERO': async (data) => {
-                await this.heroService.createNewHero({ 
-                    name: data.name, 
-                    class: data.heroClass 
-                });
-            },
+            // 'CREATE_HERO': async (data) => {
+            //     await this.heroService.createNewHero({ 
+            //         name: data.name, 
+            //         class: data.heroClass 
+            //     });
+            // },
 
             'UPDATE_HERO': async (data) => {
                 await this.heroService.updateHero(data.userId, { 
@@ -22,11 +22,11 @@ export class HeroConsumer {
                 });
             },
 
-            'ADD_ITEM': async (data) => {
-                await this.heroService.updateHero(data.userId, { 
-                    inventory: data.inventory 
-                });
-            },
+            // 'ADD_ITEM': async (data) => {
+            //     await this.heroService.updateHero(data.userId, { 
+            //         inventory: data.inventory 
+            //     });
+            // },
 
             'HERO_DIED': async (data) => {
                 await this.heroService.deleteHero(data.userId);
