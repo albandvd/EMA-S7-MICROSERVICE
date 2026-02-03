@@ -74,6 +74,14 @@ services:
     ports:
       - "3007:3007"
 
+  save-service:
+    container_name: ema-s7-micro-save-service
+    build: ./save
+    ports:
+      - "3009:3009"
+    depends_on:
+      - save-db
+
   rabbitmq-service:
     container_name: ema-s7-micro-rabbitmq-service
     image: rabbitmq:3.10-management
@@ -117,6 +125,7 @@ services:
       - 6500:5432
     volumes:
       - hero-db-data:/var/lib/postgresql/data
+      - ./init-scripts/migration.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d herodb"]
       interval: 5s
@@ -124,7 +133,20 @@ services:
       retries: 5
     restart: always
 
+  save-db:
+    container_name: ema-s7-micro-save-db
+    image: mongo:6.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: itemuser
+      MONGO_INITDB_ROOT_PASSWORD: itempassword
+    ports:
+      - "27017:27017"
+    volumes:
+      - save-db-data:/data/db
+    restart: always
+
 volumes:
   user-db-data:
   item-db-data:
   hero-db-data:
+  save-db-data:

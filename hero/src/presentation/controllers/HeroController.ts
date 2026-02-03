@@ -11,6 +11,50 @@ export class HeroController {
 		app.post("/hero", this.createHero.bind(this));
 		app.put("/hero/:uuid", this.updateHero.bind(this));
 		app.delete("/hero/:uuid", this.deleteHero.bind(this));
+		app.post("/hero/:uuid/inventory", this.addItemToHero.bind(this));
+		app.delete("/hero/:uuid/inventory", this.removeItemFromHero.bind(this));
+		app.get("/hero/:uuid/inventory", this.getHeroInventory.bind(this));
+	}
+
+	async addItemToHero(req: Request, res: Response) {
+		try {
+			const uuid: string = req.params.uuid;
+			const { item } = req.body;
+			const updatedHero = await this.heroService.addItemToHero(uuid, item);
+			res.status(200).json(updatedHero);
+		} catch (error) {
+			if (error instanceof NotFoundError) {
+				return res.status(404).json({ error: error.message });
+			}
+			res.status(500).json({ error: "Erreur serveur interne" });
+		}
+	}
+
+	async removeItemFromHero(req: Request, res: Response) {
+		try {
+			const uuid: string = req.params.uuid;
+			const { item } = req.body;
+			const updatedHero = await this.heroService.removeItemFromHero(uuid, item);
+			res.status(200).json(updatedHero);
+		} catch (error) {
+			if (error instanceof NotFoundError) {
+				return res.status(404).json({ error: error.message });
+			}
+			res.status(500).json({ error: "Erreur serveur interne" });
+		}
+	}
+
+	async getHeroInventory(req: Request, res: Response) {
+		try {
+			const uuid: string = req.params.uuid;
+			const inventory = await this.heroService.getHeroInventory(uuid);
+			res.status(200).json(inventory);
+		} catch (error) {
+			if (error instanceof NotFoundError) {
+				return res.status(404).json({ error: error.message });
+			}
+			res.status(500).json({ error: "Erreur serveur interne" });
+		}
 	}
 
 	async listAllHeroes(req: Request, res: Response) {
@@ -52,7 +96,7 @@ export class HeroController {
 				res,
 				speed,
 				gold,
-				inventory,
+				inventory,	
 			});
 			response.status(200).send(updatedHero);
 		} catch (error) {

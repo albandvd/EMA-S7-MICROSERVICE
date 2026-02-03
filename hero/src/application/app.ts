@@ -5,6 +5,7 @@ import swaggerUi from "swagger-ui-express";
 import { PrismaHeroRepository } from "../infrastrucure/adapters/PrismaHeroRepository";
 import { HeroService } from "../domain/services/HeroService";
 import { HeroController } from "../presentation/controllers/HeroController";
+import { HeroConsumer } from "../infrastrucure/messaging/heroConsumer";
 
 const app = express();
 app.use(express.json());
@@ -18,6 +19,9 @@ const prismaHeroRepository = new PrismaHeroRepository();
 const heroService = new HeroService(prismaHeroRepository);
 
 const heroController = new HeroController(heroService);
+
+const heroConsumer = new HeroConsumer(heroService);
+heroConsumer.start().catch(console.error);
 
 heroController.registerRoutes(app);
 

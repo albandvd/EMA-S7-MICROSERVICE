@@ -6,4 +6,7 @@ export interface HeroServicePort {
 	createNewHero(heroData: { name: string; class: HeroClass }): Promise<Hero>;
 	updateHero(id: string, heroData: Partial<Hero>): Promise<Hero>;
 	deleteHero(id: string): Promise<void>;
+	getHeroInventory(id: string): Promise<string[]>;
+	addItemToHero(id: string, item: string): Promise<Hero>;
+	removeItemFromHero(id: string, item: string): Promise<Hero>;
 }

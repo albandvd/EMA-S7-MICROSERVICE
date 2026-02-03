@@ -117,6 +117,73 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /hero/{id}/inventory:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: L'identifiant unique du héros.
+
+      get:
+        tags:
+          - Hero
+        summary: Récupérer l'inventaire d'un héros
+        operationId: getHeroInventory
+        responses:
+          "200":
+            description: Inventaire récupéré avec succès.
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Hero"
+          "404":
+            $ref: "#/components/responses/NotFound"
+      
+      post: 
+        tags:
+          - Hero
+        summary: Ajouter un item à l'inventaire d'un héros
+        operationId: addHeroItem
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hero/properties/inventory/items"
+        responses:
+          "200":
+            description: Item ajouté avec succès.
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Hero"
+          "404":
+            $ref: "#/components/responses/NotFound"
+        
+      delete:
+        tags: 
+          - Hero
+        summary: Supprimer un item de l'inventaire d'un héros
+        operationId: removeHeroItem
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hero/properties/inventory/items"
+        responses:
+          "200":
+            description: Item supprimé avec succès.
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Hero"
+          "404":
+            $ref: "#/components/responses/NotFound"
+
 components:
   schemas:
     HeroClass:

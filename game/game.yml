@@ -10,48 +10,6 @@ servers:
   - url: http://localhost:3003
 
 paths:
-  /game/select-class:
-    post:
-      summary: "Choix de la classe"
-      description: "Permet de présélectionner une classe avant de lancer la partie."
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [userId, className]
-              properties:
-                userId: { type: string }
-                className:
-                  $ref: '#/components/schemas/HeroClass'
-      responses:
-        '200':
-          description: "Classe validée"
-
-  /game/start:
-    post:
-      summary: "Nouvelle Partie"
-      description: "Initialise le héros (RabbitMQ), génère le donjon et crée la sauvegarde."
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [userId, name]
-              properties:
-                userId: { type: string, format: uuid }
-                name: { type: string, example: "Lancelot" }
-                heroClass: { $ref: '#/components/schemas/HeroClass' }
-      responses:
-        '200':
-          description: "Donjon généré et première salle renvoyée"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GameInitResponse'
-
   /game/next-step:
     post:
       summary: "Avancer dans le donjon"
@@ -72,37 +30,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameState'
-
-  /game/rewards:
-    get:
-      summary: "Récupérer les récompenses de fin"
-      description: "Propose 5 items aléatoires si le donjon est terminé."
-      responses:
-        '200':
-          description: "Liste d'items"
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Item'
-
-  /game/claim-reward:
-    post:
-      summary: "Choisir une récompense"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [userId, selectedItem]
-              properties:
-                userId: { type: string }
-                selectedItem: { $ref: '#/components/schemas/Item' }
-      responses:
-        '200':
-          description: "Item ajouté au héros"
 
 components:
   schemas:
