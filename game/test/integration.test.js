@@ -46,7 +46,7 @@ describe('GameService - Scénarios de Tests Intégrés', () => {
         // On s'attend à ce que le service appelle DELETE pour nettoyer la partie
         mockHttp.onDelete(new RegExp(`/save/${userId}`)).reply(200);
 
-        const result = await GameService.playNextStep(userId);
+        const result = await GameService.playNextStep(userId, { id: userId, hp: 10 }, { rooms: [{ monster: { name: "Dragon", stats: { hp: 100, atk: 50, gold: 0, vit: 10 } } }] }, 0);
 
         assert.strictEqual(result.status, 'GAME_OVER');
         assert.match(result.message, /Mort au combat/);
@@ -91,7 +91,7 @@ describe('GameService - Scénarios de Tests Intégrés', () => {
         mockHttp.onGet(new RegExp(`/hero/${userId}`)).reply(200, { id: userId, hp: 100 });
         mockHttp.onPut(new RegExp(`/save/${userId}`)).reply(200);
 
-        const result = await GameService.playNextStep(userId);
+        const result = await GameService.playNextStep(userId, { id: userId, hp: 100 }, { rooms: [{ id: 'r1', monster: null }, { id: 'r2', monster: null }] }, 0);
 
         assert.strictEqual(result.status, 'EXPLORING');
         // La salle renvoyée doit être la r2 (index 1)
