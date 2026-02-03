@@ -9,9 +9,31 @@ export class Saves {
   @Prop()
   userId: string;
 
-  @Prop()
-  hero: {"id": string, "name": string, "class": string, "hp": number, "atk": number, "res": number, "speed": number, "gold": number, "inventory": string[]};
-
+  @Prop({
+    type: {
+      id: String,
+      name: String,
+      class: String,
+      hp: Number,
+      atk: Number,
+      res: Number,
+      speed: Number,
+      gold: Number,
+      inventory: [String],
+    },
+  })
+  hero: {
+    id: string;
+    name: string;
+    class: string;
+    hp: number;
+    atk: number;
+    res: number;
+    speed: number;
+    gold: number;
+    inventory: string[];
+  };
+  
   @Prop()
   dungeonId: string;
 

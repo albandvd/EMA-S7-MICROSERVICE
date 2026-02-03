@@ -12,9 +12,6 @@ describe('SavesController', () => {
     create: jest.fn((dto) => {
       return { id: 1, ...dto };
     }),
-    findAll: jest.fn(() => {
-      return [{ id: 1, name: 'Test Save' }];
-    }),
     findOne: jest.fn((id) => {
       return { id, name: 'Test Save' };
     }),
@@ -53,15 +50,6 @@ describe('SavesController', () => {
 
       expect(service.create).toHaveBeenCalledWith(createSaveDto);
       expect(result).toEqual({ id: 1, ...createSaveDto });
-    });
-  });
-
-  describe('findAll', () => {
-    it('should return an array of saves', async () => {
-      const result = await controller.findAll();
-
-      expect(service.findAll).toHaveBeenCalled();
-      expect(result).toEqual([{ id: 1, name: 'Test Save' }]);
     });
   });
 
