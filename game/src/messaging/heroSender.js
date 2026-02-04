@@ -2,7 +2,6 @@ import amqp from 'amqplib';
 
 const RABBIT_URL = process.env.RABBITMQ_URL || 'amqp://ema-s7-micro-rabbitmq-service';
 
-// 1. On définit la logique réelle dans un objet
 export const HeroSender = {
     sendHeroAction: async (action, data) => {
         let connection;
@@ -32,8 +31,6 @@ export const HeroSender = {
     }
 };
 
-// 2. On exporte aussi la fonction normalement pour ne pas casser le reste du code
-// Mais attention : cette fonction appelle celle de l'OBJET au-dessus
 export const sendHeroAction = async (action, data) => {
     return await HeroSender.sendHeroAction(action, data);
 };

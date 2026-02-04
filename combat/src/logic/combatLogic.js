@@ -26,7 +26,7 @@ export const fight = (hero, monster) => {
     return {
         winner,
         finalHeroHp: hero.hp,
-        goldLooted: winner === 'hero' ? monster.or : 0,
+        goldLooted: winner === 'hero' ? monster.gold : 0,
         battleLog: logs
     };
 };

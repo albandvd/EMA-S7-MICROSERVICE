@@ -1,28 +1,20 @@
-import axios from 'axios';
 import { sendHeroAction } from '../messaging/heroSender.js';
 import { requestCombat } from '../messaging/combatClient.js';
-
-const HERO_SERVICE_URL = process.env.HERO_SERVICE_URL || 'http://localhost:3005/hero';
-const LEVEL_SERVICE_URL = process.env.LEVEL_SERVICE_URL || 'http://localhost:3007/levelDesign';
-const SAVE_SERVICE_URL = process.env.SAVE_SERVICE_URL || 'http://localhost:3009/save';
-const ITEM_SERVICE_URL = process.env.ITEM_SERVICE_URL || 'http://localhost:3006/items';
+import { log } from 'node:console';
 
 const activeDungeons = new Map();
 
 /**
- * PLAY NEXT STEP : Récupère la sauvegarde, traite, et met à jour.
+ * PLAY NEXT STEP : effectue un tour de jeu
  */
-export const playNextStep = async (userId, hero, dungeon, currentRoomIndex) => {
+export const playNextStep = async (userId, hero, dungeon, currentRoomIndex, status,
+     deps = { requestCombat, sendHeroAction }) => {
+    
     try {
-        // 1. Récupérer l'état depuis le SaveService
-        // const saveRes = await axios.get(`${SAVE_SERVICE_URL}/${userId}`);
-        // const session = saveRes.data;
 
-        // const heroRes = await axios.get(`${HERO_SERVICE_URL}/${userId}`);
-        // const hero = heroRes.data;
-        // en attendant la Q
-
-        // Sinon, playNextStep(userId, hero, room)
+        if(status == "GAME_OVER") {
+            return { status: "GAME_OVER", message: "Partie terminée." };
+        }
 
         const currentRoom = dungeon.rooms[currentRoomIndex];
         const monster = currentRoom.monster;
@@ -30,32 +22,28 @@ export const playNextStep = async (userId, hero, dungeon, currentRoomIndex) => {
         // 2. Logique de combat
         let newHp = hero.hp;
         if (monster) {
-            const result = await requestCombat({ hero, monster });
-
+            const result = await deps.requestCombat({ hero, monster });
+            
             if (result.winner === 'monster') {
-                await sendHeroAction('HERO_DIED', { userId });
-                //await axios.delete(`${SAVE_SERVICE_URL}/${userId}`);
+                await deps.sendHeroAction('HERO_DIED', { userId });
                 return { status: "GAME_OVER", message: "Mort au combat." };
             }
             newHp = result.finalHeroHp;
             const newGold = result.goldLooted + hero.gold;
-            await sendHeroAction('UPDATE_HERO', { userId, newHp, newGold });
+            
+            await deps.sendHeroAction('UPDATE_HERO', { userId, newHp, newGold });
         }
 
-        // 3. MISE À JOUR de la sauvegarde
         const nextIndex = currentRoomIndex + 1;
         
-        if (nextIndex >= rooms.length) {
-            // await axios.delete(`${SAVE_SERVICE_URL}/${userId}`);
+        if (nextIndex >= dungeon.rooms.length) {
             return { status: "DUNGEON_CLEARED", message: "Donjon fini !" };
         }
 
-        //await axios.put(`${SAVE_SERVICE_URL}/${userId}`, { currentRoomIndex: nextIndex });
-
         return {
             status: "EXPLORING",
-            heroHp: newHp,
-            currentRoom: rooms.nextRoomIds[nextIndex]
+            currentRoom: dungeon.rooms[nextIndex],
+            dungeonId: dungeon.id,
         };
 
     } catch (error) {

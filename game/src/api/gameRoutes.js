@@ -7,6 +7,21 @@ router.get('/game', (req, res) => {
     res.send("Game Service API On");
 });
 
+
+
+router.post('/game/next-step', async (req, res) => {
+    try {
+        const { userId, hero, dungeon, currentRoomIndex, status } = req.body;
+        const gameState = await GameService.playNextStep(userId, hero, dungeon, currentRoomIndex, status);
+        res.json(gameState);
+    } catch (error) {
+        if (error.message === "HERO_NOT_FOUND") {
+            return res.status(404).json({ error: "Héros introuvable. Veuillez créer un personnage." });
+        }
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // router.post('/game/select-class', async (req, res) => {
 //     try {
 //         const { userId, className } = req.body;
@@ -16,19 +31,6 @@ router.get('/game', (req, res) => {
 //         res.status(error.message === "INVALID_CLASS" ? 400 : 500).json({ error: error.message });
 //     }
 // });
-
-router.post('/game/next-step', async (req, res) => {
-    try {
-        const { userId, hero, dungeon, currentRoomIndex } = req.body;
-        const gameState = await GameService.playNextStep(userId, hero, dungeon, currentRoomIndex);
-        res.json(gameState);
-    } catch (error) {
-        if (error.message === "HERO_NOT_FOUND") {
-            return res.status(404).json({ error: "Héros introuvable. Veuillez créer un personnage." });
-        }
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // router.post('/game/start', async (req, res) => {
 //     try {

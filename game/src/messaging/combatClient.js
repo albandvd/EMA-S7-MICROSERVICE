@@ -3,13 +3,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 const RABBIT_URL = process.env.RABBITMQ_URL || 'amqp://ema-s7-micro-rabbitmq-service';
 
-// L'objet que l'on pourra "mocker" dans les tests
 export const CombatClient = {
     requestCombat: async (combatPayload) => {
         const connection = await amqp.connect(RABBIT_URL);
         const channel = await connection.createChannel();   
         
-        // Configuration RPC : queue temporaire pour la réponse
         const replyQueue = await channel.assertQueue('', { exclusive: true });
         const correlationId = uuidv4();
 
@@ -36,7 +34,6 @@ export const CombatClient = {
     }
 };
 
-// L'export simple pour le reste de ton code GameService
 export const requestCombat = async (payload) => {
     return await CombatClient.requestCombat(payload);
 };
