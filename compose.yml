@@ -146,6 +146,14 @@ services:
       - save-db-data:/data/db
     restart: always
 
+  front:
+    container_name: ema-s7-micro-front-service
+    build: ./front
+    ports:
+      - "8080:3000"
+    depends_on:
+      - nginx
+
 volumes:
   user-db-data:
   item-db-data:
