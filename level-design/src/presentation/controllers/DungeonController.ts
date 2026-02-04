@@ -6,7 +6,7 @@ export class DungeonController {
 	constructor(private readonly dungeonService: DungeonServicePort) {}
 
 	registerRoutes(app: Express) {
-		app.post("/levelDesign/generate", this.generate.bind(this));
+		app.get("/levelDesign/generate", this.generate.bind(this));
 	}
 
 	async generate(req: Request, res: Response): Promise<void> {

@@ -121,28 +121,65 @@ export default function Game() {
 		gold: number;
 		item: string;
 	} | null>(null);
+	const [error, setError] = useState<string | null>(null);
 
+	// Chargement du Héros et du Donjon via API
 	useEffect(() => {
 		const storedHero = localStorage.getItem("currentHero");
 		if (storedHero) {
 			setHero(JSON.parse(storedHero));
 		}
-		setDungeon(FAKE_DUNGEON);
+
+		const fetchDungeon = async () => {
+			try {
+				const response = await fetch(
+					"http://localhost:3000/levelDesign/generate",
+					{
+						method: "GET",
+						headers: {
+							"Content-Type": "application/json",
+						},
+					},
+				);
+
+				if (!response.ok) {
+					throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+				}
+
+				const data: DungeonMap = await response.json();
+				setDungeon(data);
+			} catch (err) {
+				const errorMessage = err instanceof Error ? err.message : String(err);
+				console.error("Erreur au chargement du donjon:", errorMessage);
+				setError(`Erreur: ${errorMessage}`);
+			}
+		};
+
+		fetchDungeon();
 	}, []);
 
-	useEffect(() => {
-		if (hero) {
-			const base: Record<string, BattleStats> = {
-				WARRIOR: { hp: 100, atk: 10, res: 5, vit: 7, gold: 0 },
-				MAGE: { hp: 70, atk: 15, res: 2, vit: 8, gold: 0 },
-				TANK: { hp: 150, atk: 6, res: 10, vit: 4, gold: 0 },
-				ASSASSIN: { hp: 80, atk: 12, res: 3, vit: 15, gold: 0 },
-			};
-			setHeroStats(base[hero.class] ?? base.WARRIOR);
-		}
-	}, [hero]);
+	if (error) {
+		return (
+			<div className='min-h-screen bg-slate-950 flex items-center justify-center'>
+				<p className='text-red-500 text-xl font-bold'>{error}</p>
+			</div>
+		);
+	}
 
-	const currentRoom = dungeon?.rooms[currentRoomIndex];
+	if (!dungeon || !dungeon.rooms || dungeon.rooms.length === 0) {
+		return (
+			<div className='min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 flex items-center justify-center'>
+				<div className='text-center'>
+					<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4'></div>
+					<p className='text-yellow-400 text-xl italic'>
+						Génération du donjon par les mages de Maranello...
+					</p>
+				</div>
+			</div>
+		);
+	}
+
+	const currentRoom = dungeon.rooms[currentRoomIndex];
 
 	const handleNextRoom = (nextRoomId: string) => {
 		if (currentRoom?.monster) {
