@@ -10,7 +10,7 @@ services:
       - game-service
       - combat-service
       - hero-service
-      - item-service
+      - items-service
       - leveldesign-service
 
   auth-service:
@@ -58,7 +58,7 @@ services:
     depends_on:
       - hero-db
 
-  item-service:
+  items-service:
     container_name: ema-s7-micro-item-service
     build: ./item
     ports:
@@ -112,6 +112,7 @@ services:
       - 5432:5432
     volumes:
       - item-db-data:/var/lib/postgresql/data/
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: always
 
   hero-db:
