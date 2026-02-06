@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser";
 import { notFound } from "./middlewares/notFound.js";
 import router from "./routes/item.route.js";
 
-export const app = express();
+const app = express();
 
 app.use(express.json());
 app.use(morgan("combined"));
@@ -15,6 +15,6 @@ app.use(router);
 
 app.use(notFound);
 
-if (process.env.NODE_ENV !== "test") {
-	app.listen(3006, () => console.log("Running"));
-}
+app.listen(3006, () => {
+	console.log(`Server running on port 3006`);
+});
