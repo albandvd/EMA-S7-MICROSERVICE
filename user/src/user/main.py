@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Cookie
 from sqlalchemy.orm import Session
 from bcrypt import hashpw, gensalt
 
 from .database import engine, Base, get_db
 from .model import User
 from .schema import UserCreate
+from .check_auth import is_authenticated
 
 app = FastAPI(title="User Service")
 
@@ -24,12 +25,16 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     return user_obj
 
 @app.get("/users/{user_id}")
-def read_user(user_id: int, db: Session = Depends(get_db)):
+def read_user(user_id: int, token: str = Cookie(None), db: Session = Depends(get_db)):
+    if not is_authenticated(token):
+        raise HTTPException(status_code=401, detail="Unauthorized")
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
 @app.get("/users")
-def list_users(db: Session = Depends(get_db)):
+def list_users(token: str = Cookie(None), db: Session = Depends(get_db)):
+    if not is_authenticated(token):
+        raise HTTPException(status_code=401, detail="Unauthorized")
     return db.query(User).all()
