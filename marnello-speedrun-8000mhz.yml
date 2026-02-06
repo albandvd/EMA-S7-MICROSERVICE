@@ -1,0 +1,485 @@
+openapi: "3.0.0"
+info:
+  version: 1.2.0
+  title: "Marnello Speedrun 8000MHz - API Gateway"
+  description: "Documentation unifiée des microservices via le proxy Nginx (Port 3000)."
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Serveur Proxy Nginx
+
+paths:
+  # --- AUTH SERVICE ---
+  /login:
+    post:
+      summary: Connexion utilisateur
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUser'
+      responses:
+        '201':
+          description: Login réussi.
+        '401':
+          description: Identifiants invalides.
+
+  /checkAuth:
+    get:
+      summary: Vérification du token/session
+      tags: [Auth]
+      responses:
+        '200':
+          description: Authentification valide.
+        '401':
+          description: Non autorisé.
+
+  # --- USER SERVICE ---
+  /user:
+    get:
+      summary: Liste tous les utilisateurs
+      tags: [User]
+      responses:
+        '200':
+          description: Liste trouvée.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      summary: Créer un utilisateur
+      tags: [User]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        '201':
+          description: Utilisateur créé.
+
+  /user/{id}:
+    get:
+      summary: Infos d'un utilisateur spécifique
+      tags: [User]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Utilisateur trouvé.
+
+  # --- HERO SERVICE ---
+  /hero:
+    get:
+      summary: Health Check Hero Service
+      tags: [Hero]
+      responses:
+        "200":
+          description: Service en ligne.
+    post:
+      summary: Créer un nouveau héros
+      tags: [Hero]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateHeroRequest"
+      responses:
+        "201":
+          description: Héros créé.
+
+  /heroes:
+    get:
+      summary: Récupérer tous les héros
+      tags: [Hero]
+      responses:
+        "200":
+          description: Liste des héros.
+
+  /hero/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Récupérer un héros par ID
+      tags: [Hero]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hero"
+    put:
+      summary: Mettre à jour un héros
+      tags: [Hero]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateHeroRequest"
+      responses:
+        "200":
+          description: Mis à jour.
+    delete:
+      summary: Supprimer un héros
+      tags: [Hero]
+      responses:
+        "204":
+          description: Supprimé.
+
+  /hero/{id}/inventory:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Voir l'inventaire du héros
+      tags: [Hero]
+      responses:
+        "200":
+          description: Inventaire renvoyé.
+    post:
+      summary: Ajouter un item à l'inventaire
+      tags: [Hero]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                itemId: { type: string }
+      responses:
+        "200":
+          description: Item ajouté.
+    delete:
+      summary: Retirer un item de l'inventaire
+      tags: [Hero]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                itemId: { type: string }
+      responses:
+        "200":
+          description: Item retiré avec succès.
+
+  # --- COMBAT SERVICE ---
+  /combat:
+    get:
+      summary: Health Check Combat Service
+      tags: [Combat]
+      responses:
+        '200':
+          description: Service Combat prêt.
+
+  /combat/fight-manual:
+    post:
+      summary: Simuler un combat
+      tags: [Combat]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [heroId, monsterId]
+              properties:
+                heroId: { type: string }
+                monsterId: { type: string }
+      responses:
+        '200':
+          description: Résultat du combat.
+
+  # --- GAME SERVICE ---
+  /game:
+    get:
+      summary: Health Check Game Service
+      tags: [Game]
+      responses:
+        '200':
+          description: Service Game en ligne.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Game Service is UP"
+
+  /game/next-step:
+    post:
+      summary: Avancer dans le donjon
+      tags: [Game]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId: { type: string }
+      responses:
+        '200':
+          description: État du jeu après le tour.
+
+  # --- ITEM SERVICE ---
+  /items:
+    get:
+      summary: Liste des items disponibles
+      tags: [Items]
+      responses:
+        '200':
+          description: Tous les items.
+    post:
+      summary: Créer un nouvel item
+      tags: [Items]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItem'
+      responses:
+        '201':
+          description: Item créé.
+
+  /items/random/{nb}:
+    get:
+      summary: Obtenir des items aléatoires
+      tags: [Items]
+      parameters:
+        - name: nb
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Liste d'items.
+
+  # --- LEVEL DESIGN SERVICE ---
+  /levelDesign:
+    get:
+      summary: Health Check Level Design
+      tags: [LevelDesign]
+      responses:
+        "200":
+          description: Message de bienvenue.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Hello World!"
+
+  /levelDesign/generate:
+    get:
+      summary: Générer un donjon aléatoire
+      tags: [LevelDesign]
+      responses:
+        "200":
+          description: Donjon généré avec succès.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DungeonMap"
+        "400":
+          description: Erreur de génération.
+        "500":
+          description: Erreur interne serveur.
+
+  # --- SAVE SERVICE ---
+  /save:
+    post:
+      summary: Créer une sauvegarde
+      tags: [Save]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DungeonSave'
+      responses:
+        '201':
+          description: Sauvegarde enregistrée.
+
+  /save/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Charger la sauvegarde d'un joueur
+      tags: [Save]
+      responses:
+        '200':
+          description: Données de sauvegarde renvoyées.
+    put:
+      summary: Mettre à jour la progression (index de salle)
+      tags: [Save]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentRoomIndex: { type: integer }
+      responses:
+        '200':
+          description: Progression mise à jour.
+    delete:
+      summary: Supprimer une sauvegarde
+      tags: [Save]
+      responses:
+        '200':
+          description: Supprimée.
+
+components:
+  schemas:
+    # --- SCHÉMAS PARTAGÉS / UNIFIÉS ---
+    User:
+      type: object
+      required: [id, login, password]
+      properties:
+        id: { type: string }
+        login: { type: string }
+        password: { type: string }
+
+    CreateUser:
+      type: object
+      required: [login, password]
+      properties:
+        login: { type: string }
+        password: { type: string }
+
+    HeroClass:
+      type: string
+      enum: [WARRIOR, TANK, ASSASSIN, MAGE]
+
+    Hero:
+      type: object
+      required: [id, name, class, hp, atk, res, speed, gold, inventory]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        class: { $ref: "#/components/schemas/HeroClass" }
+        hp: { type: integer }
+        atk: { type: integer }
+        res: { type: integer }
+        speed: { type: integer }
+        gold: { type: integer }
+        inventory: { type: array, items: { type: string } }
+
+    CreateHeroRequest:
+      type: object
+      required: [name, class]
+      properties:
+        name: { type: string, minLength: 3 }
+        class: { $ref: "#/components/schemas/HeroClass" }
+
+    UpdateHeroRequest:
+      type: object
+      properties:
+        hp: { type: integer }
+        atk: { type: integer }
+        res: { type: integer }
+        speed: { type: integer }
+        gold: { type: integer }
+        inventory: { type: array, items: { type: string } }
+
+    BattleStats:
+      type: object
+      required: [hp, atk, res, vit, gold]
+      properties:
+        hp: { type: integer }
+        atk: { type: integer }
+        res: { type: integer }
+        vit: { type: integer }
+        gold: { type: integer }
+
+    Monster:
+      type: object
+      required: [name, stats]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        stats: { $ref: "#/components/schemas/BattleStats" }
+
+    Room:
+      type: object
+      required: [id, index, dialogue]
+      properties:
+        id: { type: string, format: uuid }
+        index: { type: integer }
+        dialogue: { type: string }
+        monster: { $ref: "#/components/schemas/Monster", nullable: true }
+        nextRoomIds: { type: array, items: { type: string, format: uuid } }
+
+    DungeonMap:
+      type: object
+      required: [id, rooms]
+      properties:
+        id: { type: string, format: uuid }
+        rooms: { type: array, items: { $ref: "#/components/schemas/Room" } }
+
+    Item:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        hp: { type: integer }
+        atk: { type: integer }
+        res: { type: integer }
+        speed: { type: integer }
+
+    CreateItem:
+      type: object
+      required: [name, description, hp, atk, res, speed]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        hp: { type: integer }
+        atk: { type: integer }
+        res: { type: integer }
+        speed: { type: integer }
+
+    DungeonSave:
+      type: object
+      required: [userId, rooms, currentRoomIndex]
+      properties:
+        userId: { type: string }
+        dungeonId: { type: string }
+        currentRoomIndex: { type: integer, default: 0 }
+        status: { type: string }
+        rooms: { type: array, items: { type: object } }
+
+  responses:
+    NotFound:
+      description: Ressource non trouvée.
+    BadRequest:
+      description: Requête invalide.
