@@ -3,10 +3,9 @@ import { isAuthenticated } from '../middlewares/auth.js';
 import pool from '../db.js';
 
 export const getItems = async (req: Request, res: Response) => {
-  // if (!isAuthenticated(req)) {
-    // console.log(req.cookies)
-    // return res.status(401).json({ error: 'Unauthorized' });
-  // } else { 
+  if (!isAuthenticated(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  } else { 
     try {
       const { rows } = await pool.query('SELECT * FROM "items"');
       res.json(rows);
@@ -14,7 +13,7 @@ export const getItems = async (req: Request, res: Response) => {
       console.error(error);
       res.status(500).json({ error: 'Failed to fetch items' });
     }
-  // }
+  }
 };
 
 export const createItem = async (req: Request, res: Response) => {

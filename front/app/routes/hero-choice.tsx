@@ -44,7 +44,8 @@ export default function HeroChoice() {
 					name: heroName,
 					class: selectedClass,
 				}),
-			});
+                credentials: 'include'
+				});
 
 			if (!response.ok) {
 				throw new Error("Erreur lors de la création du héros");
