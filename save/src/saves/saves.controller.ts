@@ -12,6 +12,7 @@ export class SavesController {
   @Post()
   create(@Body() createSaveDto: CreateSaveDto, @Req() req: Request) {
     if (!isAuthenticated(req)) {
+      console.log(req.cookies)
       throw new Error('Unauthorized');
     }
     return this.savesService.create(createSaveDto);
