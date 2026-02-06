@@ -177,12 +177,16 @@ export default function Game({ params }: Route.ComponentProps) {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const heroRes = await fetch(`${GATEWAY_URL}/hero/${heroId}`);
+                const heroRes = await fetch(`${GATEWAY_URL}/hero/${heroId}`, {
+                    credentials: 'include'
+                });
                 if (!heroRes.ok) throw new Error("Aventurier introuvable");
                 const heroData = await heroRes.json();
                 setHero(normalizeHeroFromServer(heroData, heroData.inventory || []));
 
-                const dungeonRes = await fetch(`${GATEWAY_URL}/levelDesign/generate`);
+                const dungeonRes = await fetch(`${GATEWAY_URL}/levelDesign/generate`, {
+                    credentials: 'include'
+                });
                 if (!dungeonRes.ok) throw new Error("Erreur génération donjon");
                 const dungeonData: DungeonMap = await dungeonRes.json();
 
@@ -210,7 +214,9 @@ export default function Game({ params }: Route.ComponentProps) {
 
     const refreshHeroStats = async () => {
         try {
-            const res = await fetch(`${GATEWAY_URL}/hero/${heroId}`);
+            const res = await fetch(`${GATEWAY_URL}/hero/${heroId}`, {
+                    credentials: 'include'
+                });
             if (res.ok) {
                 const updatedHero = await res.json();
                 // Normalize server response and preserve client inventory when
