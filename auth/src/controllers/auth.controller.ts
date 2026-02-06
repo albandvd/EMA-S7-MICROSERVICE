@@ -38,10 +38,11 @@ export const register = async (body: { email: string; password: string }) => {
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         const [result] = await pool.query(
-            'INSERT INTO users (email, password) VALUES (?, ?)',
-            [email, hashedPassword]
+            'INSERT INTO users (email, name, password) VALUES (?, ?, ?)',
+            [email, email.split('@')[0], hashedPassword]
         );
-        const token = jwt.sign({ id: (result as any).insertId, email: email }, 'cle_secret', { expiresIn: '1h' });
+        const token = jwt.sign({email: email }, 'cle_secret', { expiresIn: '1h' });
+        console.log(token)
         return { message: "User registered successfully", token};
     } catch (error) {
         return { message: "Database error", error };
