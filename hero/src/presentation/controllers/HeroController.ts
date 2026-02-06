@@ -6,7 +6,7 @@ export class HeroController {
 	constructor(private readonly heroService: HeroServicePort) {}
 
 	registerRoutes(app: Express) {
-		app.get("/heroes", this.listAllHeroes.bind(this));
+		app.get("/hero", this.listAllHeroes.bind(this));
 		app.get("/hero/:uuid", this.getHeroById.bind(this));
 		app.post("/hero", this.createHero.bind(this));
 		app.put("/hero/:uuid", this.updateHero.bind(this));
@@ -96,7 +96,7 @@ export class HeroController {
 				res,
 				speed,
 				gold,
-				inventory,	
+				inventory,
 			});
 			response.status(200).send(updatedHero);
 		} catch (error) {

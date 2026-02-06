@@ -7,7 +7,7 @@ servers:
   - url: http://localhost:3005
 
 paths:
-  /hero:
+  /:
     get:
       summary: Health Check
       description: Retourne un simple message de bienvenue.
@@ -19,6 +19,23 @@ paths:
               schema:
                 type: string
                 example: "Hello World!"
+
+  /hero:
+    get:
+      tags:
+        - Hero
+      summary: Récupérer tous les héros
+      description: Renvoie la liste complète des héros enregistrés.
+      operationId: getAllHeroes
+      responses:
+        "200":
+          description: Liste récupérée avec succès.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Hero"
     post:
       tags:
         - Hero
@@ -40,23 +57,6 @@ paths:
                 $ref: "#/components/schemas/Hero"
         "400":
           $ref: "#/components/responses/BadRequest"
-
-  /heroes:
-    get:
-      tags:
-        - Hero
-      summary: Récupérer tous les héros
-      description: Renvoie la liste complète des héros enregistrés.
-      operationId: getAllHeroes
-      responses:
-        "200":
-          description: Liste récupérée avec succès.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Hero"
 
   /hero/{id}:
     parameters:
@@ -118,71 +118,71 @@ paths:
           $ref: "#/components/responses/NotFound"
 
   /hero/{id}/inventory:
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: L'identifiant unique du héros.
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: L'identifiant unique du héros.
 
-      get:
-        tags:
-          - Hero
-        summary: Récupérer l'inventaire d'un héros
-        operationId: getHeroInventory
-        responses:
-          "200":
-            description: Inventaire récupéré avec succès.
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/Hero"
-          "404":
-            $ref: "#/components/responses/NotFound"
-      
-      post: 
-        tags:
-          - Hero
-        summary: Ajouter un item à l'inventaire d'un héros
-        operationId: addHeroItem
-        requestBody:
-          required: true
+    get:
+      tags:
+        - Hero
+      summary: Récupérer l'inventaire d'un héros
+      operationId: getHeroInventory
+      responses:
+        "200":
+          description: Inventaire récupéré avec succès.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Hero/properties/inventory/items"
-        responses:
-          "200":
-            description: Item ajouté avec succès.
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/Hero"
-          "404":
-            $ref: "#/components/responses/NotFound"
-        
-      delete:
-        tags: 
-          - Hero
-        summary: Supprimer un item de l'inventaire d'un héros
-        operationId: removeHeroItem
-        requestBody:
-          required: true
+                $ref: "#/components/schemas/Hero"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    post:
+      tags:
+        - Hero
+      summary: Ajouter un item à l'inventaire d'un héros
+      operationId: addHeroItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Hero/properties/inventory/items"
+      responses:
+        "200":
+          description: Item ajouté avec succès.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Hero/properties/inventory/items"
-        responses:
-          "200":
-            description: Item supprimé avec succès.
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/Hero"
-          "404":
-            $ref: "#/components/responses/NotFound"
+                $ref: "#/components/schemas/Hero"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags:
+        - Hero
+      summary: Supprimer un item de l'inventaire d'un héros
+      operationId: removeHeroItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Hero/properties/inventory/items"
+      responses:
+        "200":
+          description: Item supprimé avec succès.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hero"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
 components:
   schemas:

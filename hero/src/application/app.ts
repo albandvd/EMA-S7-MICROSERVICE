@@ -25,7 +25,7 @@ heroConsumer.start().catch(console.error);
 
 heroController.registerRoutes(app);
 
-app.get("/hero", (req, res) => {
+app.get("/", (req, res) => {
 	res.set("Content-Type", "text/plain");
 	res.send("Hello World!");
 });
