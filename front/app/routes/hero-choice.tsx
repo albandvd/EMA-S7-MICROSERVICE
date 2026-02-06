@@ -14,9 +14,11 @@ const CLASSES = ["WARRIOR", "MAGE", "TANK", "ASSASSIN"];
 export default function HeroChoice() {
 	const [heroName, setHeroName] = useState("");
 	const [selectedClass, setSelectedClass] = useState("WARRIOR");
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState("");
 	const navigate = useNavigate();
 
-	const handleCreateHero = (e: React.FormEvent) => {
+	const handleCreateHero = async (e: React.SubmitEvent) => {
 		e.preventDefault();
 
 		if (!heroName.trim()) {
@@ -24,17 +26,37 @@ export default function HeroChoice() {
 			return;
 		}
 
-		// Stocker le héros créé (plus tard on l'enverra à l'API)
-		const hero = {
-			name: heroName,
-			class: selectedClass,
-		};
+		if (heroName.length < 3) {
+			alert("Le nom du héro doit être d'au moins 3 caractères");
+			return;
+		}
 
-		// Stocker temporairement dans localStorage
-		localStorage.setItem("currentHero", JSON.stringify(hero));
+		setIsLoading(true);
+		setError("");
 
-		// Redirection vers /game
-		navigate("/game");
+		try {
+			const response = await fetch("http://localhost:3000/hero", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					name: heroName,
+					class: selectedClass,
+				}),
+			});
+
+			if (!response.ok) {
+				throw new Error("Erreur lors de la création du héros");
+			}
+
+			// Redirection vers /game
+			navigate("/game");
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Une erreur est survenue");
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	return (
@@ -135,17 +157,25 @@ export default function HeroChoice() {
 						</p>
 					</div>
 
+					{/* Error Message */}
+					{error && (
+						<div className='p-4 bg-red-900/50 border-l-4 border-red-500 rounded'>
+							<p className='text-red-200 text-sm'>{error}</p>
+						</div>
+					)}
+
 					{/* Submit Button */}
 					<button
 						type='submit'
-						className='w-full px-6 py-3 text-lg font-bold text-yellow-400 bg-gradient-to-br from-slate-700 to-slate-900 border-2 border-amber-900 rounded-lg cursor-pointer transition-all duration-300 hover:border-yellow-500 hover:text-yellow-300 hover:shadow-2xl active:shadow-lg'
+						disabled={isLoading}
+						className='w-full px-6 py-3 text-lg font-bold text-yellow-400 bg-gradient-to-br from-slate-700 to-slate-900 border-2 border-amber-900 rounded-lg cursor-pointer transition-all duration-300 hover:border-yellow-500 hover:text-yellow-300 hover:shadow-2xl active:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed'
 						style={{
 							textShadow: "1px 1px 2px rgba(0, 0, 0, 0.8)",
 							boxShadow:
 								"0 0 15px rgba(255, 215, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
 						}}
 					>
-						🎮 Commencer l'aventure
+						{isLoading ? "Création en cours..." : "🎮 Commencer l'aventure"}
 					</button>
 				</form>
 			</div>
