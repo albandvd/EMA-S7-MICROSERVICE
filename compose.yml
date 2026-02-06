@@ -16,19 +16,19 @@ services:
   auth-service:
     container_name: ema-s7-micro-auth-service
     build: ./auth
-    ports: 
+    ports:
       - "3001:3001"
     depends_on:
       - user-db
-    
-  user-service: 
+
+  user-service:
     container_name: ema-s7-micro-user-service
     build: ./user
     ports:
       - "3002:3002"
     depends_on:
       - user-db
-  
+
   game-service:
     container_name: ema-s7-micro-game-service
     build: ./game
@@ -53,10 +53,11 @@ services:
     ports:
       - "3005:3005"
     environment:
-      DATABASE_URL: "postgresql://user:password@hero-db:6500/herodb?schema=public"
+      DATABASE_URL: "postgresql://user:password@hero-db:5432/herodb?schema=public"
       PORT: 3005
     depends_on:
-      - hero-db
+      hero-db:
+        condition: service_healthy
 
   items-service:
     container_name: ema-s7-micro-item-service
@@ -100,7 +101,7 @@ services:
       - "3306:3306"
     volumes:
       - user-db-data:/var/lib/mysql
-  
+
   item-db:
     container_name: ema-s7-micro-item-db
     image: postgres:alpine3.23
