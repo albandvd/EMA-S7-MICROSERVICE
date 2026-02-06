@@ -20,4 +20,4 @@ INSERT INTO items (name, description, hp, atk, res, speed) VALUES
 ('Ring of Power', 'A plain gold ring that holds immense power.', 1000, 1000, 1000, 1000),
 ('Staff of the Magi', 'A powerful staff that can absorb and redirect magical energy.', 30, 10, 50, 15),
 ('Vorpal Blade', 'A blade that goes "snicker-snack!" and is sharp enough to decapitate on a critical hit.', 10, 80, 5, 25),
-('Sunfire Cape', 'A cape that immolates nearby enemies.', 100, 20, 40, 0);
+('Sunfire Cape', 'A cape that immolates nearby enemies.', 100, 20, 40, 0),
