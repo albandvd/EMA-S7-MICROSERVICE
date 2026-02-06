@@ -188,7 +188,9 @@ export default function Game({ params }: Route.ComponentProps) {
 
                 // Distribution des objets
                 const itemsCount = Math.floor(dungeonData.rooms.length / 2);
-                const itemsRes = await fetch(`${GATEWAY_URL}/items/alea/${itemsCount}`);
+                const itemsRes = await fetch(`${GATEWAY_URL}/items/alea/${itemsCount}`, {
+                    credentials: 'include'
+                });
                 const itemsData: Item[] = itemsRes.ok ? await itemsRes.json() : [];
 
                 const updatedRooms = dungeonData.rooms.map((room, idx) => {

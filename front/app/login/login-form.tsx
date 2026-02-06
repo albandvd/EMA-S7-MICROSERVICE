@@ -25,8 +25,12 @@ export default function LoginForm() {
 					password,
 				}),
 			});
-			navigate("/");
-			console.log("Données formulaire :", response);
+			if (response.status==401) {
+				const errorData = await response.json();
+				throw new Error(errorData.message || "Login failed");
+			} else {
+				navigate("/");
+			}
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Une erreur est survenue");
 		} finally {
