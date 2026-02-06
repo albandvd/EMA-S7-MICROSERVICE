@@ -10,7 +10,6 @@ const app = express();
 app.use(express.json());
 app.use(morgan("combined"));
 app.use(cookieParser());
-app.use(cors());
 app.use(router);
 
 app.use(notFound);
