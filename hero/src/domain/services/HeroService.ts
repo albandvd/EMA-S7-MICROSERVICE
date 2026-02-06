@@ -63,11 +63,15 @@ export class HeroService implements HeroServicePort {
 		const existingHero = await this.heroRepository.findById(id);
 		if (!existingHero) {
 			throw new NotFoundError(
-				`Impossible de supprimer : Héros ${id} introuvable`,
+				`Impossible de traiter la mort : Héros ${id} introuvable`,
 			);
 		}
 
-		await this.heroRepository.delete(id);
+		await this.heroRepository.update(id, { 
+			hp: 0 
+		} as Partial<Hero>);
+		
+		console.log(`[HeroService] Le héros ${id} est marqué comme décédé (HP: 0).`);
 	}
 
 	async getHeroInventory(id: string): Promise<string[]> {

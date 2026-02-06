@@ -1,8 +1,8 @@
 import axios from 'axios';
 import assert from 'node:assert';
 
-const GAME_URL = 'http://localhost:3003';
-const HERO_URL = 'http://localhost:3005';
+const GAME_URL = 'http://localhost:3000';
+const HERO_URL = 'http://localhost:3000';
 
 async function runFullFlowTest() {
     console.log("🚀 Lancement du test de flux complet...");
