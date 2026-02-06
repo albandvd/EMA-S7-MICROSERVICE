@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Req,
+} from '@nestjs/common';
 import type { Request } from 'express';
 import { SavesService } from './saves.service';
 import { CreateSaveDto } from './dto/create-save.dto';
@@ -12,7 +21,7 @@ export class SavesController {
   @Post()
   create(@Body() createSaveDto: CreateSaveDto, @Req() req: Request) {
     if (!isAuthenticated(req)) {
-      console.log(req.cookies)
+      console.log(req.cookies);
       throw new Error('Unauthorized');
     }
     return this.savesService.create(createSaveDto);
@@ -27,7 +36,11 @@ export class SavesController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSaveDto: UpdateSaveDto, @Req() req: Request) {
+  update(
+    @Param('id') id: string,
+    @Body() updateSaveDto: UpdateSaveDto,
+    @Req() req: Request,
+  ) {
     if (!isAuthenticated(req)) {
       throw new Error('Unauthorized');
     }

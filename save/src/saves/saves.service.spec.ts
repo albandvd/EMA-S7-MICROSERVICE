@@ -1,87 +1,90 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SavesController } from './saves.controller';
+import { getModelToken } from '@nestjs/mongoose';
 import { SavesService } from './saves.service';
-import { CreateSaveDto } from './dto/create-save.dto';
-import { UpdateSaveDto } from './dto/update-save.dto';
+import { Saves } from './schemas/saves.schema';
 
-describe('SavesController', () => {
-  let controller: SavesController;
+describe('SavesService', () => {
   let service: SavesService;
+  let model: any;
 
-  const mockSavesService = {
-    create: jest.fn((dto) => {
-      return { id: 1, ...dto };
-    }),
-    findOne: jest.fn((id) => {
-      return { id, name: 'Test Save' };
-    }),
-    update: jest.fn((id, dto) => {
-      return { id, ...dto };
-    }),
-    remove: jest.fn((id) => {
-      return { id, deleted: true };
-    }),
+  // Simulation d'une instance de document Mongoose
+  const mockSaveInstance = {
+    save: jest.fn().mockResolvedValue({ id: 1, data: 'test' }),
   };
+
+  // Mock du modèle Mongoose
+  const mockSavesModel = jest
+    .fn()
+    .mockImplementation(() => mockSaveInstance) as any;
+
+  // Ajout des méthodes statiques au mock
+  mockSavesModel.findById = jest.fn();
+  mockSavesModel.findByIdAndUpdate = jest.fn();
+  mockSavesModel.findByIdAndDelete = jest.fn();
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [SavesController],
       providers: [
+        SavesService,
         {
-          provide: SavesService,
-          useValue: mockSavesService, // On injecte notre mock ici
+          provide: getModelToken(Saves.name),
+          useValue: mockSavesModel,
         },
       ],
     }).compile();
 
-    controller = module.get<SavesController>(SavesController);
     service = module.get<SavesService>(SavesService);
+    model = module.get(getModelToken(Saves.name));
   });
 
   it('should be defined', () => {
-    expect(controller).toBeDefined();
+    expect(service).toBeDefined();
   });
 
   describe('create', () => {
-    it('should create a new save', async () => {
-      const createSaveDto: CreateSaveDto = { name: 'New Save', data: {} } as any; // Adaptez selon votre DTO réel
-      
-      const result = await controller.create(createSaveDto);
+    it('devrait appeler save() sur une nouvelle instance', async () => {
+      const dto = { data: 'test' } as any;
+      const result = await service.create(dto);
 
-      expect(service.create).toHaveBeenCalledWith(createSaveDto);
-      expect(result).toEqual({ id: 1, ...createSaveDto });
+      expect(model).toHaveBeenCalledWith(dto);
+      expect(mockSaveInstance.save).toHaveBeenCalled();
+      expect(result).toEqual({ id: 1, data: 'test' });
     });
   });
 
   describe('findOne', () => {
-    it('should find one save by id and convert param to number', async () => {
-      const idStr = '1';
-      const result = await controller.findOne(idStr);
+    it('devrait appeler findById avec le bon ID', async () => {
+      const expectedResult = { id: 123 };
+      model.findById.mockResolvedValue(expectedResult);
 
-      expect(service.findOne).toHaveBeenCalledWith(1);
-      expect(result).toEqual({ id: 1, name: 'Test Save' });
+      const result = await service.findOne(123);
+
+      expect(model.findById).toHaveBeenCalledWith(123);
+      expect(result).toEqual(expectedResult);
     });
   });
 
   describe('update', () => {
-    it('should update a save', async () => {
-      const idStr = '1';
-      const updateSaveDto: UpdateSaveDto = { name: 'Updated Save' } as any;
+    it('devrait appeler findByIdAndUpdate avec l option new: true', async () => {
+      const dto = { data: 'updated' };
+      model.findByIdAndUpdate.mockResolvedValue({ id: 1, ...dto });
 
-      const result = await controller.update(idStr, updateSaveDto);
+      await service.update(1, dto as any);
 
-      expect(service.update).toHaveBeenCalledWith(1, updateSaveDto);
-      expect(result).toEqual({ id: 1, ...updateSaveDto });
+      expect(model.findByIdAndUpdate).toHaveBeenCalledWith(1, dto, {
+        new: true,
+      });
     });
   });
 
   describe('remove', () => {
-    it('should remove a save', async () => {
-      const idStr = '1';
-      const result = await controller.remove(idStr);
+    it('devrait appeler findByIdAndDelete', async () => {
+      model.findByIdAndDelete.mockResolvedValue({ deleted: true });
 
-      expect(service.remove).toHaveBeenCalledWith(1);
-      expect(result).toEqual({ id: 1, deleted: true });
+      const result = await service.remove(1);
+
+      expect(model.findByIdAndDelete).toHaveBeenCalledWith(1);
+      expect(result).toEqual({ deleted: true });
     });
   });
 });
