@@ -5,7 +5,10 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useNavigate,
+  useLocation,
 } from "react-router";
+import { useEffect } from "react";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -23,7 +26,7 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <head>
@@ -41,8 +44,45 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+function AuthGuard({ children }: Readonly<{ children: React.ReactNode }>) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // If the user is visiting a public auth page, skip the cookie check.
+    if (location.pathname === "/login" || location.pathname === "/signup") return;
+
+    // Check for the presence of the 'token' (localStorage fallback first, then cookie)
+    try {
+      const tokenFromStorage = typeof globalThis !== "undefined" && typeof globalThis.window !== "undefined" ? globalThis.window.localStorage.getItem("token") : null;
+      const cookies = typeof document === "undefined" ? "" : document.cookie;
+      // debug: log current path and cookies/storage
+      // eslint-disable-next-line no-console
+      console.log("AuthGuard checking path:", location.pathname, "localStorage.token:", tokenFromStorage, "cookies:", cookies);
+
+      const hasTokenFromStorage = !!tokenFromStorage;
+      const hasTokenFromCookie = cookies.split("; ").some((c) => c.split("=")[0] === "token" && c.split("=")[1] !== undefined && c.split("=")[1] !== "");
+
+      if (!hasTokenFromStorage && !hasTokenFromCookie) {
+        navigate("/login");
+      }
+    } catch (err) {
+      // If anything goes wrong reading cookies/storage, log and redirect to login as safe default
+      // eslint-disable-next-line no-console
+      console.error(err);
+      navigate("/login");
+    }
+  }, [navigate, location.pathname]);
+
+  return <>{children}</>;
+}
+
 export default function App() {
-  return <Outlet />;
+  return (
+    <AuthGuard>
+      <Outlet />
+    </AuthGuard>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

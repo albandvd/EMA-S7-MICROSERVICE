@@ -3,10 +3,10 @@ import { isAuthenticated } from '../middlewares/auth.js';
 import pool from '../db.js';
 
 export const getItems = async (req: Request, res: Response) => {
-  //if (!isAuthenticated(req)) {
-  //  console.log(req.cookies)
-  //  return res.status(401).json({ error: 'Unauthorized' });
-  //} else { 
+  // if (!isAuthenticated(req)) {
+    // console.log(req.cookies)
+    // return res.status(401).json({ error: 'Unauthorized' });
+  // } else { 
     try {
       const { rows } = await pool.query('SELECT * FROM "items"');
       res.json(rows);
@@ -14,13 +14,13 @@ export const getItems = async (req: Request, res: Response) => {
       console.error(error);
       res.status(500).json({ error: 'Failed to fetch items' });
     }
-  //}
+  // }
 };
 
 export const createItem = async (req: Request, res: Response) => {
-  if (!isAuthenticated(req)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  } else { 
+  // if (!isAuthenticated(req)) {
+  //   return res.status(401).json({ error: 'Unauthorized' });
+  // } else { 
     try {
       const { name, description, hp, atk, res: resistance, speed } = req.body;
       const { rows } = await pool.query(
@@ -32,13 +32,13 @@ export const createItem = async (req: Request, res: Response) => {
       console.error(error);
       res.status(400).json({ error: 'Invalid input' });
     }
-  }
+  // }
 };
 
 export const getItemById = async (req: Request, res: Response) => {
-  if (!isAuthenticated(req)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  } else { 
+  // if (!isAuthenticated(req)) {
+  //   return res.status(401).json({ error: 'Unauthorized' });
+  // } else { 
     try {
       const { id } = req.params as { id: string };
       const { rows } = await pool.query('SELECT * FROM "items" WHERE id = $1', [id]);
@@ -50,13 +50,13 @@ export const getItemById = async (req: Request, res: Response) => {
       console.error(error);
       res.status(500).json({ error: 'Failed to fetch item' });
     }
-  }
+  // }
 };
 
 export const updateItem = async (req: Request, res: Response) => {
-  if (!isAuthenticated(req)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  } else {
+  // if (!isAuthenticated(req)) {
+  //   return res.status(401).json({ error: 'Unauthorized' });
+  // } else {
     try {
       const { id } = req.params as { id: string };
       const { name, description, hp, atk, res: resistance, speed } = req.body;
@@ -71,13 +71,13 @@ export const updateItem = async (req: Request, res: Response) => {
     } catch (error) {
       res.status(400).json({ error: 'Invalid input' });
     }
-  }
+  // }
 };
 
 export const deleteItem = async (req: Request, res: Response) => {
-  if (!isAuthenticated(req)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  } else { 
+  // if (!isAuthenticated(req)) {
+  //   return res.status(401).json({ error: 'Unauthorized' });
+  // } else { 
     try {
       const { id } = req.params as { id: string };
       const { rowCount } = await pool.query('DELETE FROM "items" WHERE id = $1', [id]);
@@ -88,13 +88,13 @@ export const deleteItem = async (req: Request, res: Response) => {
     } catch (error) {
       res.status(500).json({ error: 'Failed to delete item' });
     }
-  }
+  // }
 };
 
 export const getRandomItems = async (req: Request, res: Response) => {
-  if (!isAuthenticated(req)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  } else { 
+  // if (!isAuthenticated(req)) {
+  //   return res.status(401).json({ error: 'Unauthorized' });
+  // } else { 
     try {
       const nb = Number.parseInt(String(req.params.nb), 10);
       if (isNaN(nb) || nb <= 0) {
@@ -114,5 +114,5 @@ export const getRandomItems = async (req: Request, res: Response) => {
       console.error(error);
       res.status(500).json({ error: 'Failed to fetch random items' });
     }
-  }
+  // }
 };

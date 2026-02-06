@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
+const GATEWAY_URL = "http://localhost:3000";
+
 export default function LoginForm() {
 	const [login, setLogin] = useState("");
 	const [password, setPassword] = useState("");
@@ -14,22 +16,50 @@ export default function LoginForm() {
 		setLoading(true);
 
 		try {
-			const response = await fetch("http://localhost:3000/auth/login", {
+			const body = { email: login, password };
+			const res = await fetch(`${GATEWAY_URL}/auth/login`, {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				credentials: "include",
-				body: JSON.stringify({
-					"email": login,
-					password,
-				}),
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(body),
 			});
-			if (response.status==401) {
-				const errorData = await response.json();
-				throw new Error(errorData.message || "Login failed");
-			} else {
+			console.log(res);
+			
+			// read and log server response for debugging
+			let data: any = null;
+			try {
+				data = await res.json();
+			} catch (error_) {
+				// failed to parse JSON
+				// eslint-disable-next-line no-console
+				console.error("Failed to parse login response JSON:", error_);
+			}
+			// Debug logs to inspect server response
+			// eslint-disable-next-line no-console
+			console.log("Login response:", res);
+			// eslint-disable-next-line no-console
+			console.log("Login response body:", data);
+
+			if (res.ok && data?.token) {
+				// set a readable cookie named 'token' so AuthGuard can detect it
+				document.cookie = `token=${data.token}; path=/; max-age=3600`;
+				// also persist token to localStorage as a fallback for client-side checks
+				try {
+					localStorage.setItem("token", data.token);
+					// eslint-disable-next-line no-console
+					console.log("localStorage.token set:", localStorage.getItem("token"));
+				} catch (e) {
+					// ignore storage errors in private mode, but log for debugging
+					// eslint-disable-next-line no-console
+					console.warn("localStorage set failed:", e);
+				}
+				// debug: show cookies immediately after setting
+				// eslint-disable-next-line no-console
+				console.log("document.cookie after set:", document.cookie);
 				navigate("/");
+			} else {
+				// Show server payload to help debugging when token is missing
+				const serverMsg = data?.message ?? JSON.stringify(data) ?? "Identifiants invalides";
+				setError(serverMsg);
 			}
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Une erreur est survenue");

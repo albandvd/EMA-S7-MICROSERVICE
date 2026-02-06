@@ -85,6 +85,7 @@ export default function Game({ params }: Route.ComponentProps) {
     const heroId = (params as { heroId: string }).heroId;
     const GATEWAY_URL = "http://localhost:3000";
     const INVENTORY_SIZE = 3;
+    const [saveInitialized, setSaveInitialized] = useState(false);
 
     // --- CALCUL DES STATS (Clean Logic) ---
     // Helper: sum bonuses from an inventory list
@@ -188,9 +189,7 @@ export default function Game({ params }: Route.ComponentProps) {
 
                 // Distribution des objets
                 const itemsCount = Math.floor(dungeonData.rooms.length / 2);
-                const itemsRes = await fetch(`${GATEWAY_URL}/items/alea/${itemsCount}`, {
-                    credentials: 'include'
-                });
+                const itemsRes = await fetch(`${GATEWAY_URL}/items/alea/${itemsCount}`);
                 const itemsData: Item[] = itemsRes.ok ? await itemsRes.json() : [];
 
                 const updatedRooms = dungeonData.rooms.map((room, idx) => {
@@ -201,6 +200,40 @@ export default function Game({ params }: Route.ComponentProps) {
                 });
 
                 setDungeon({ ...dungeonData, rooms: updatedRooms });
+
+                // --- Save / Load handling ---
+                try {
+                    // Try to fetch an existing save for this user
+                    const saveRes = await fetch(`${GATEWAY_URL}/save/${heroId}`);
+                    if (saveRes.ok) {
+                        const saveData = await saveRes.json();
+                        // If the save contains rooms, use them (preserve server state)
+                        if (saveData.rooms && Array.isArray(saveData.rooms) && saveData.rooms.length > 0) {
+                            setDungeon({ ...dungeonData, rooms: saveData.rooms });
+                        }
+                        if (typeof saveData.currentRoomIndex === 'number') {
+                            setCurrentRoomIndex(saveData.currentRoomIndex);
+                        }
+                    } else if (saveRes.status === 404) {
+                        // Create initial save for this user
+                        const payload = {
+                            userId: heroId,
+                            dungeonId: dungeonData.id,
+                            currentRoomIndex: 0,
+                            status: 'EXPLORING',
+                            rooms: updatedRooms,
+                        };
+                        await fetch(`${GATEWAY_URL}/save`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload),
+                        });
+                    }
+                } catch (saveErr) {
+                    console.error('Erreur save/load:', saveErr);
+                }
+
+                setSaveInitialized(true);
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Erreur de connexion au royaume");
             }
@@ -224,6 +257,19 @@ export default function Game({ params }: Route.ComponentProps) {
             }
         } catch (err) {
             console.error("Erreur refresh stats:", err);
+        }
+    };
+
+    // --- SAVE HELPERS ---
+    const putSaveCurrentIndex = async (index: number) => {
+        try {
+            await fetch(`${GATEWAY_URL}/save/${heroId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ currentRoomIndex: index }),
+            });
+        } catch (err) {
+            console.error('Erreur put save:', err);
         }
     };
 
@@ -274,8 +320,8 @@ export default function Game({ params }: Route.ComponentProps) {
                 ),
             });
         } catch (err) {
-            console.error(err); // Log the caught error
-            setError("Le combat a échoué..."); // Set error message
+            console.error(err);
+            setError("Le combat a échoué...");
         } finally {
             setIsFighting(false);
         }
@@ -319,6 +365,14 @@ export default function Game({ params }: Route.ComponentProps) {
         }
     };
 
+    // When the player moves between rooms, persist the new index to the save
+    useEffect(() => {
+        if (!saveInitialized) return;
+        // ensure we have a hero id
+        if (!hero) return;
+        putSaveCurrentIndex(currentRoomIndex);
+    }, [currentRoomIndex, saveInitialized]);
+
     // --- RENDU ---
     if (isDead) return (
         <div className='min-h-screen bg-slate-950 flex items-center justify-center p-4 text-center'>
@@ -338,6 +392,9 @@ export default function Game({ params }: Route.ComponentProps) {
     // sum of bonuses provided by current inventory (used for UI breakdown)
     const itemBonuses = sumItemBonuses(hero.inventory);
 
+    // Donjon progress (0..1) — used by the header progress bar
+    const dungeonProgress = dungeon ? Math.min(1, Math.max(0, (currentRoomIndex + 1) / Math.max(1, dungeon.rooms.length))) : 0;
+
     return (
         <div className='min-h-screen bg-slate-950 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 to-black p-6 text-slate-200 font-serif'>
             <div className='max-w-6xl mx-auto'>
@@ -346,13 +403,25 @@ export default function Game({ params }: Route.ComponentProps) {
                     <div>
                         <h1 className='text-4xl font-serif text-amber-600 tracking-widest'>⚔️ DUNGEON CRAWLER</h1>
                         <p className='text-amber-200/60 uppercase text-xs tracking-[0.2em]'>Aventurier : {hero.name} | {hero.class}</p>
-                        <div className='text-slate-400 text-[12px] mt-1'>
-                            <span className='mr-3'>HP de base (classe {hero.class}): <span className='text-amber-200 font-semibold'>{hero.hp}</span></span>
-                            <span>Bonus objets: <span className='text-amber-300 font-semibold'>+{itemBonuses.hp}</span></span>
-                        </div>
                     </div>
                     <div className='text-right text-amber-600'>
                         <p className='text-xl font-bold'>PROFONDEUR : {currentRoom.index + 1}</p>
+                        <div className='mt-2 w-44'>
+                            <div className='flex justify-between text-[11px] text-slate-400'>
+                                <span className='uppercase tracking-widest'>Progression</span>
+                                <span className='font-bold text-amber-300'>{Math.round(dungeonProgress * 100)}%</span>
+                            </div>
+                            <div className='mt-2'>
+                                <progress
+                                    className='w-full h-2 appearance-none rounded-full overflow-hidden'
+                                    value={Math.round(dungeonProgress * 100)}
+                                    max={100}
+                                    aria-label='Progression dans le donjon'
+                                />
+                                <style>{`progress::-webkit-progress-value{background:linear-gradient(90deg,#b45309,#f59e0b);} progress::-webkit-progress-bar{background:#0f1724;border-radius:8px;}`}</style>
+                            </div>
+                            <div className='text-[11px] text-slate-500 mt-1'>{currentRoom.index + 1} / {dungeon?.rooms.length}</div>
+                        </div>
                     </div>
                 </div>
 
@@ -379,10 +448,10 @@ export default function Game({ params }: Route.ComponentProps) {
                                 <div className='p-8 bg-blue-950/10 border border-blue-500/30 rounded-lg mb-6 text-center animate-in slide-in-from-bottom-4'>
                                     <h3 className='text-xl font-serif text-blue-400 mb-4 uppercase'>Vous trouvez un trésor : {currentRoom.item.name}</h3>
                                     <div className='flex justify-center gap-4 text-xs font-mono text-blue-300 mb-8'>
-                                        {currentRoom.item.atk && <span>ATK +{currentRoom.item.atk}</span>}
-                                        {currentRoom.item.res && <span>RES +{currentRoom.item.res}</span>}
-                                        {currentRoom.item.hp && <span>HP +{currentRoom.item.hp}</span>}
-                                        {currentRoom.item.vit && <span>VIT +{currentRoom.item.vit}</span>}
+                                        {typeof currentRoom.item.atk === 'number' ? <span className='text-red-300 font-semibold'>ATK +{currentRoom.item.atk}</span> : null}
+                                        {typeof currentRoom.item.res === 'number' ? <span className='text-blue-300 font-semibold'>RES +{currentRoom.item.res}</span> : null}
+                                        {typeof currentRoom.item.hp === 'number' ? <span className='text-green-300 font-semibold'>HP +{currentRoom.item.hp}</span> : null}
+                                        {typeof currentRoom.item.vit === 'number' ? <span className='text-purple-300 font-semibold'>VIT +{currentRoom.item.vit}</span> : null}
                                     </div>
                                     <button onClick={() => handleAddItem(currentRoom.item!)} className='px-8 py-3 bg-blue-900/60 text-white font-bold rounded-md hover:bg-blue-800 transition-colors uppercase text-sm tracking-widest'>Saisir l'objet</button>
                                 </div>
@@ -448,10 +517,10 @@ export default function Game({ params }: Route.ComponentProps) {
                                             <div key={item.id} className='p-3 bg-blue-950/10 border border-blue-900/20 rounded shadow-inner'>
                                                 <p className='font-serif text-blue-200 text-sm uppercase mb-1'>{item.name}</p>
                                                 <div className='flex flex-wrap gap-x-3 gap-y-1'>
-                                                    {item.hp && <span className='text-[10px] text-green-600 font-bold'>+ {item.hp} HP</span>}
-                                                    {item.atk && <span className='text-[10px] text-red-700 font-bold'>+ {item.atk} ATK</span>}
-                                                    {item.res && <span className='text-[10px] text-blue-700 font-bold'>+ {item.res} RES</span>}
-                                                    {item.vit && <span className='text-[10px] text-purple-700 font-bold'>+ {item.vit} VIT</span>}
+                                                    {typeof item.hp === 'number' ? <span className='text-[10px] text-green-600 font-bold'>+ {item.hp} HP</span> : null}
+                                                    {typeof item.atk === 'number' ? <span className='text-[10px] text-red-700 font-bold'>+ {item.atk} ATK</span> : null}
+                                                    {typeof item.res === 'number' ? <span className='text-[10px] text-blue-700 font-bold'>+ {item.res} RES</span> : null}
+                                                    {typeof item.vit === 'number' ? <span className='text-[10px] text-purple-700 font-bold'>+ {item.vit} VIT</span> : null}
                                                 </div>
                                             </div>
                                         ))}
@@ -459,37 +528,6 @@ export default function Game({ params }: Route.ComponentProps) {
                                 ) : (
                                     <p className='py-6 text-center text-slate-600 italic text-sm'>Votre sac est vide...</p>
                                 )}
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
                                 <div className='grid grid-cols-1 gap-2'>
                                     <div className='flex flex-col gap-2 p-3 bg-black/40 rounded border border-slate-800'>
                                         <div className='flex justify-between items-center'>
@@ -536,10 +574,10 @@ export default function Game({ params }: Route.ComponentProps) {
                                     <div key={item.id} className='p-3 bg-blue-950/10 border border-blue-900/20 rounded shadow-inner'>
                                         <p className='font-serif text-blue-200 text-sm uppercase mb-1'>{item.name}</p>
                                         <div className='flex flex-wrap gap-x-3 gap-y-1'>
-                                            {item.hp && <span className='text-[10px] text-green-600 font-bold'>+ {item.hp} HP</span>}
-                                            {item.atk && <span className='text-[10px] text-red-700 font-bold'>+ {item.atk} ATK</span>}
-                                            {item.res && <span className='text-[10px] text-blue-700 font-bold'>+ {item.res} RES</span>}
-                                            {item.vit && <span className='text-[10px] text-purple-700 font-bold'>+ {item.vit} VIT</span>}
+                                            {typeof item.hp === 'number' ? <span className='text-[10px] text-green-600 font-bold'>+ {item.hp} HP</span> : null}
+                                            {typeof item.atk === 'number' ? <span className='text-[10px] text-red-700 font-bold'>+ {item.atk} ATK</span> : null}
+                                            {typeof item.res === 'number' ? <span className='text-[10px] text-blue-700 font-bold'>+ {item.res} RES</span> : null}
+                                            {typeof item.vit === 'number' ? <span className='text-[10px] text-purple-700 font-bold'>+ {item.vit} VIT</span> : null}
                                         </div>
                                     </div>
                                 )) : (
