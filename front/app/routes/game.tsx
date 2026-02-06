@@ -109,7 +109,7 @@ export function meta({}: Route.MetaArgs) {
 	];
 }
 
-export default function Game() {
+export default function Game({ params }: Route.ComponentProps) {
 	const [dungeon, setDungeon] = useState<DungeonMap | null>(null);
 	const [currentRoomIndex, setCurrentRoomIndex] = useState(0);
 	const [hero, setHero] = useState<{ name: string; class: string } | null>(
@@ -122,13 +122,44 @@ export default function Game() {
 		item: string;
 	} | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const heroId = (params as { heroId: string }).heroId;
 
 	// Chargement du Héros et du Donjon via API
 	useEffect(() => {
-		const storedHero = localStorage.getItem("currentHero");
-		if (storedHero) {
-			setHero(JSON.parse(storedHero));
-		}
+		const fetchHero = async () => {
+			try {
+				const response = await fetch(
+					`http://localhost:3000/hero/${heroId}`,
+					{
+						method: "GET",
+						headers: {
+							"Content-Type": "application/json",
+						},
+					},
+				);
+
+				if (!response.ok) {
+					throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+				}
+
+				const data = await response.json();
+				setHero({
+					name: data.name,
+					class: data.class,
+				});
+				setHeroStats({
+					hp: data.hp,
+					atk: data.atk,
+					res: data.res,
+					vit: data.speed,
+					gold: data.gold,
+				});
+			} catch (err) {
+				const errorMessage = err instanceof Error ? err.message : String(err);
+				console.error("Erreur au chargement du héros:", errorMessage);
+				setError(`Erreur: ${errorMessage}`);
+			}
+		};
 
 		const fetchDungeon = async () => {
 			try {
@@ -155,8 +186,9 @@ export default function Game() {
 			}
 		};
 
+		fetchHero();
 		fetchDungeon();
-	}, []);
+	}, [heroId]);
 
 	if (error) {
 		return (

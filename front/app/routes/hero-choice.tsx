@@ -50,8 +50,10 @@ export default function HeroChoice() {
 				throw new Error("Erreur lors de la création du héros");
 			}
 
-			// Redirection vers /game
-			navigate("/game");
+			const createdHero = await response.json();
+
+			// Redirection vers /game avec l'ID du héros
+			navigate(`/game/${createdHero.id}`);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Une erreur est survenue");
 		} finally {
