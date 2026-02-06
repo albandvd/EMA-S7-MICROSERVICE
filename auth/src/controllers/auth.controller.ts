@@ -32,3 +32,18 @@ export const login = async (body: { email: string; password: string }) => {
         return { message: "Database error", error };
     }
 };
+
+export const register = async (body: { email: string; password: string }) => {
+    const { email, password } = body;
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const [result] = await pool.query(
+            'INSERT INTO users (email, password) VALUES (?, ?)',
+            [email, hashedPassword]
+        );
+        const token = jwt.sign({ id: (result as any).insertId, email: email }, 'cle_secret', { expiresIn: '1h' });
+        return { message: "User registered successfully", token};
+    } catch (error) {
+        return { message: "Database error", error };
+    }
+};

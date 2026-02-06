@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 
 export default function SignupForm() {
 	const [login, setLogin] = useState("");
@@ -7,6 +8,7 @@ export default function SignupForm() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [success, setSuccess] = useState("");
+	const navigate = useNavigate();
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -28,7 +30,18 @@ export default function SignupForm() {
 		}
 
 		try {
-			//TODO: Implement API call for login
+			const response = await fetch("http://localhost:3000/auth/register", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				credentials: "include",
+				body: JSON.stringify({
+					"email": login,
+					password,
+				}),
+			});
+			navigate("/");
 			console.log("Données formulaire :", login, password, confirmPassword);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Une erreur est survenue");
