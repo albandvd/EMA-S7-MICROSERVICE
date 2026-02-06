@@ -10,6 +10,15 @@ interface BattleStats {
     gold: number;
 }
 
+interface Item {
+    id: string;
+    name: string;
+    atk?: number;
+    res?: number;
+    hp?: number;
+    type: string;
+}
+
 interface Monster {
     id?: string;
     name: string;
@@ -24,6 +33,7 @@ interface Room {
     index: number;
     dialogue: string;
     monster?: Monster | null;
+    item?: Item | null;
     nextRoomIds: string[];
 }
 
@@ -41,6 +51,7 @@ interface Hero {
     res: number;
     vit: number;
     gold: number;
+    inventory: Item[];
 }
 
 export function meta({}: Route.MetaArgs) {
@@ -57,6 +68,7 @@ export default function Game({ params }: Route.ComponentProps) {
     const [hero, setHero] = useState<Hero | null>(null);
     const [isFighting, setIsFighting] = useState(false);
     const [isDead, setIsDead] = useState(false);
+    const [itemToSwap, setItemToSwap] = useState<Item | null>(null);
     const [fightResult, setFightResult] = useState<{
         roomId: string;
         gold: number;
@@ -65,19 +77,36 @@ export default function Game({ params }: Route.ComponentProps) {
     
     const heroId = (params as { heroId: string }).heroId;
     const GATEWAY_URL = "http://localhost:3000";
+    const INVENTORY_SIZE = 3;
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // 1. Récupération du Héros
                 const heroRes = await fetch(`${GATEWAY_URL}/hero/${heroId}`);
                 if (!heroRes.ok) throw new Error("Héros introuvable");
                 const heroData = await heroRes.json();
-                setHero(heroData);
+                setHero({ ...heroData, inventory: heroData.inventory || [] });
 
+                // 2. Récupération du Donjon
                 const dungeonRes = await fetch(`${GATEWAY_URL}/levelDesign/generate`);
                 if (!dungeonRes.ok) throw new Error("Erreur génération donjon");
-                const dungeonData = await dungeonRes.json();
-                setDungeon(dungeonData);
+                const dungeonData: DungeonMap = await dungeonRes.json();
+
+                // 3. Récupération des Items Aléatoires (1/2 salles)
+                const itemsCount = Math.floor(dungeonData.rooms.length / 2);
+                const itemsRes = await fetch(`${GATEWAY_URL}/items/random/${itemsCount}`);
+                const itemsData: Item[] = itemsRes.ok ? await itemsRes.json() : [];
+
+                // 4. Distribution des items dans les salles
+                const updatedRooms = dungeonData.rooms.map((room, idx) => {
+                    if (idx > 0 && idx % 2 === 0 && itemsData.length > 0) {
+                        return { ...room, item: itemsData.shift() };
+                    }
+                    return room;
+                });
+
+                setDungeon({ ...dungeonData, rooms: updatedRooms });
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Erreur de connexion");
             }
@@ -90,10 +119,8 @@ export default function Game({ params }: Route.ComponentProps) {
             const res = await fetch(`${GATEWAY_URL}/hero/${heroId}`);
             if (res.ok) {
                 const updatedHero = await res.json();
-                setHero(updatedHero);
-                if (updatedHero.hp <= 0) {
-                    setIsDead(true);
-                }
+                setHero(prev => ({ ...updatedHero, inventory: prev?.inventory || [] }));
+                if (updatedHero.hp <= 0) setIsDead(true);
             }
         } catch (err) {
             console.error("Erreur refresh stats:", err);
@@ -108,8 +135,6 @@ export default function Game({ params }: Route.ComponentProps) {
         setIsFighting(true);
 
         try {
-            // --- CRUCIAL: APLATIR LE MONSTRE POUR LE COMBAT SERVICE ---
-            // On extrait les stats de .stats si elles y sont, sinon on prend la racine
             const monsterStats = {
                 name: currentRoom.monster.name,
                 hp: currentRoom.monster.stats?.hp ?? currentRoom.monster.hp,
@@ -117,56 +142,70 @@ export default function Game({ params }: Route.ComponentProps) {
                 gold: currentRoom.monster.stats?.gold ?? currentRoom.monster.gold,
             };
 
-            // On reconstruit un donjon simplifié avec le monstre aplati pour le service
-            const simplifiedDungeon = {
-                ...dungeon,
-                rooms: dungeon.rooms.map((r, idx) => ({
-                    ...r,
-                    monster: idx === currentRoomIndex ? monsterStats : r.monster
-                }))
-            };
-
             const gamePayload = {
                 userId: heroId,
                 hero: hero, 
-                dungeon: simplifiedDungeon,
+                dungeon: {
+                    ...dungeon,
+                    rooms: dungeon.rooms.map((r, idx) => ({
+                        ...r,
+                        monster: idx === currentRoomIndex ? monsterStats : r.monster
+                    }))
+                },
                 currentRoomIndex: currentRoomIndex,
                 status: "EXPLORING"
             };
 
-            const response = await fetch(`${GATEWAY_URL}/game/next-step`, {
+            await fetch(`${GATEWAY_URL}/game/next-step`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(gamePayload),
             });
 
-            if (!response.ok) throw new Error("Le GameService n'a pas répondu");
-
-            // Attente du traitement RabbitMQ
             await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // Récupération des stats finales
             await refreshHeroStats();
 
-            // Si le héros n'est pas mort (vérifié dans refreshHeroStats), on affiche la victoire
-            if (hero && hero.hp > 0) {
-                setFightResult({ 
-                    roomId: currentRoom.id, 
-                    gold: monsterStats.gold || 0 
-                });
-
-                setDungeon({
-                    ...dungeon,
-                    rooms: dungeon.rooms.map((r) =>
-                        r.id === currentRoom.id ? { ...r, monster: null } : r,
-                    ),
-                });
-            }
+            setFightResult({ roomId: currentRoom.id, gold: monsterStats.gold || 0 });
+            setDungeon({
+                ...dungeon,
+                rooms: dungeon.rooms.map((r) =>
+                    r.id === currentRoom.id ? { ...r, monster: null } : r,
+                ),
+            });
         } catch (err) {
-            setError("Échec de la communication avec les services de combat.");
+            setError("Échec du combat.");
         } finally {
             setIsFighting(false);
         }
+    };
+
+    const handleAddItem = (item: Item) => {
+        if (!hero) return;
+        if (hero.inventory.length >= INVENTORY_SIZE) {
+            setItemToSwap(item);
+        } else {
+            const updatedHero = { ...hero, inventory: [...hero.inventory, item] };
+            setHero(updatedHero);
+            removeRoomItem();
+        }
+    };
+
+    const replaceItem = (oldItemId: string) => {
+        if (!hero || !itemToSwap) return;
+        const newInventory = hero.inventory.filter(i => i.id !== oldItemId);
+        setHero({ ...hero, inventory: [...newInventory, itemToSwap] });
+        setItemToSwap(null);
+        removeRoomItem();
+    };
+
+    const removeRoomItem = () => {
+        if (!dungeon) return;
+        setDungeon({
+            ...dungeon,
+            rooms: dungeon.rooms.map((r, idx) => 
+                idx === currentRoomIndex ? { ...r, item: null } : r
+            )
+        });
     };
 
     const handleNextRoom = (nextRoomId: string) => {
@@ -174,35 +213,28 @@ export default function Game({ params }: Route.ComponentProps) {
         if (nextIndex !== undefined && nextIndex !== -1) {
             setCurrentRoomIndex(nextIndex);
             setFightResult(null);
+            setItemToSwap(null);
         }
     };
 
-    // --- ÉCRAN DE MORT ---
-    if (isDead) {
-        return (
-            <div className='min-h-screen bg-black flex items-center justify-center p-4 text-center'>
-                <div className='max-w-md w-full border-4 border-red-900 bg-slate-900 p-10 rounded-3xl shadow-[0_0_50px_rgba(255,0,0,0.3)]'>
-                    <h2 className='text-6xl font-black text-red-600 mb-6 italic'>GAME OVER</h2>
-                    <p className='text-slate-300 mb-8'>Votre aventure s'arrête ici. Votre héros a succombé à ses blessures.</p>
-                    <button 
-                        onClick={() => navigate("/")}
-                        className='w-full py-4 bg-red-700 text-white font-black rounded-xl hover:bg-red-600 transition-transform active:scale-95'
-                    >
-                        RETOUR AU MENU
-                    </button>
-                </div>
+    if (isDead) return (
+        <div className='min-h-screen bg-black flex items-center justify-center p-4 text-center'>
+            <div className='max-w-md w-full border-4 border-red-900 bg-slate-900 p-10 rounded-3xl shadow-[0_0_50px_rgba(255,0,0,0.3)]'>
+                <h2 className='text-6xl font-black text-red-600 mb-6 italic'>GAME OVER</h2>
+                <button onClick={() => navigate("/")} className='w-full py-4 bg-red-700 text-white font-black rounded-xl'>RETOUR AU MENU</button>
             </div>
-        );
-    }
+        </div>
+    );
 
     if (error) return <div className='min-h-screen bg-slate-950 flex items-center justify-center text-red-500 font-bold'>{error}</div>;
-    if (!dungeon || !hero) return <div className='min-h-screen bg-slate-950 flex items-center justify-center text-yellow-400 animate-pulse font-bold'>SYNCHRONISATION MARANELLO...</div>;
+    if (!dungeon || !hero) return <div className='min-h-screen bg-slate-950 flex items-center justify-center text-yellow-400 animate-pulse font-bold'>SYNCHRONISATION...</div>;
 
     const currentRoom = dungeon.rooms[currentRoomIndex];
 
     return (
-        <div className='min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 p-6 font-sans text-slate-200'>
+        <div className='min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 p-6 text-slate-200'>
             <div className='max-w-6xl mx-auto'>
+                {/* Header */}
                 <div className='mb-8 flex justify-between items-end border-b border-amber-900/50 pb-4'>
                     <div>
                         <h1 className='text-4xl font-black text-orange-600 italic tracking-tighter'>🏎️ MARANELLO SPEEDRUN</h1>
@@ -215,128 +247,95 @@ export default function Game({ params }: Route.ComponentProps) {
 
                 <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
                     <div className='lg:col-span-2'>
-                        <div className='bg-slate-900/95 border-4 border-amber-900 rounded-2xl p-8 mb-6 shadow-2xl relative overflow-hidden'>
-                            {isFighting && (
-                                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20">
-                                    <div className="w-16 h-16 border-4 border-t-orange-500 border-slate-800 rounded-full animate-spin mb-4"></div>
-                                    <p className="text-orange-500 font-black tracking-widest animate-pulse">COMBAT EN COURS...</p>
-                                </div>
-                            )}
+                        <div className='bg-slate-900/95 border-4 border-amber-900 rounded-2xl p-8 mb-6 shadow-2xl relative'>
+                            {isFighting && <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-20"><p className="text-orange-500 animate-pulse">COMBAT EN COURS...</p></div>}
+                            
+                            <p className='text-yellow-100 text-xl mb-8 italic'>"{currentRoom.dialogue}"</p>
 
-                            <p className='text-yellow-100 text-xl mb-8 leading-relaxed italic font-serif'>"{currentRoom.dialogue}"</p>
-
+                            {/* Section Combat */}
                             {currentRoom.monster ? (
-                                <div className='border-2 border-red-900 rounded-xl p-6 mb-6 bg-red-950/20'>
-                                    <h3 className='text-2xl font-bold text-red-500 mb-4 uppercase tracking-tighter'>⚠️ MENACE : {currentRoom.monster.name}</h3>
-                                    <div className='grid grid-cols-2 gap-4 text-center mb-6'>
-                                        <div className='p-3 bg-black/40 rounded border border-red-800'>
-                                            <p className='text-[10px] text-red-400 font-bold uppercase'>PV Ennemi</p>
-                                            <p className='text-2xl font-black text-white'>{currentRoom.monster.stats?.hp ?? currentRoom.monster.hp}</p>
-                                        </div>
-                                        <div className='p-3 bg-black/40 rounded border border-orange-800'>
-                                            <p className='text-[10px] text-orange-400 font-bold uppercase'>Attaque</p>
-                                            <p className='text-2xl font-black text-white'>{currentRoom.monster.stats?.atk ?? currentRoom.monster.atk}</p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={handleFight}
-                                        className='w-full py-4 font-black text-white bg-gradient-to-r from-red-800 to-red-600 hover:from-red-700 hover:to-red-500 rounded-xl shadow-lg transition-all active:scale-95'
-                                    >
-                                        LANCER LE COMBAT
-                                    </button>
+                                <div className='border-2 border-red-900 rounded-xl p-6 bg-red-950/20'>
+                                    <h3 className='text-xl font-bold text-red-500 mb-4 uppercase'>⚠️ ENNEMI : {currentRoom.monster.name}</h3>
+                                    <button onClick={handleFight} className='w-full py-4 font-black text-white bg-red-700 rounded-xl hover:bg-red-600'>ENGAGER LE COMBAT</button>
                                 </div>
                             ) : fightResult ? (
-                                <div className='p-8 bg-yellow-950/40 border-2 border-yellow-600 rounded-xl mb-6 text-center animate-in zoom-in'>
-                                    <h3 className='text-4xl font-black text-yellow-400 mb-2 italic'>VICTOIRE</h3>
-                                    <p className='text-yellow-200 text-lg font-bold tracking-widest'>+{fightResult.gold} OR RÉCUPÉRÉ</p>
-                                    <button
-                                        className='mt-6 px-12 py-3 bg-yellow-600 text-black font-black rounded-full hover:bg-yellow-500 transition-colors'
-                                        onClick={() => setFightResult(null)}
-                                    >
-                                        CONTINUER L'EXPLORATION
-                                    </button>
+                                <div className='p-8 bg-yellow-950/40 border-2 border-yellow-600 rounded-xl mb-6 text-center'>
+                                    <h3 className='text-3xl font-black text-yellow-400 mb-2'>VICTOIRE !</h3>
+                                    <p className='text-yellow-200'>+{fightResult.gold} OR RÉCUPÉRÉ</p>
+                                    <button onClick={() => setFightResult(null)} className='mt-4 px-8 py-2 bg-yellow-600 text-black font-bold rounded-full'>CONTINUER</button>
+                                </div>
+                            ) : currentRoom.item ? (
+                                <div className='p-6 bg-blue-950/40 border-2 border-blue-500 rounded-xl mb-6 animate-in zoom-in'>
+                                    <h3 className='text-xl font-bold text-blue-400 mb-2'>📦 OBJET TROUVÉ : {currentRoom.item.name}</h3>
+                                    <p className='text-sm text-blue-200 mb-4'>ATK: {currentRoom.item.atk || 0} | RES: {currentRoom.item.res || 0} | HP: {currentRoom.item.hp || 0}</p>
+                                    <button onClick={() => handleAddItem(currentRoom.item!)} className='w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-500'>RAMASSER L'OBJET</button>
                                 </div>
                             ) : (
-                                <div className='p-6 bg-green-950/20 border-2 border-green-900/50 rounded-xl mb-6 text-center'>
-                                    <p className='text-green-400 font-bold uppercase tracking-widest'>Route dégagée</p>
-                                </div>
+                                <div className='p-4 bg-green-950/20 border-2 border-green-900/50 rounded-xl text-center'><p className='text-green-400 font-bold uppercase'>Zone Sécurisée</p></div>
                             )}
-
-                            <div className='w-full bg-slate-800 rounded-full h-3 border border-amber-900/50'>
-                                <div
-                                    className='bg-gradient-to-r from-orange-600 to-yellow-500 h-full transition-all duration-700'
-                                    style={{ width: `${((currentRoom.index + 1) / (dungeon.rooms.length || 1)) * 100}%` }}
-                                ></div>
-                            </div>
                         </div>
 
-                        {!currentRoom.monster && !fightResult && (
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-bottom-4'>
+                        {/* Remplacement d'item (Modal-like) */}
+                        {itemToSwap && (
+                            <div className='fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4'>
+                                <div className='bg-slate-900 border-4 border-blue-600 p-8 rounded-2xl max-w-lg w-full'>
+                                    <h3 className='text-2xl font-black text-white mb-2 uppercase'>Inventaire Plein !</h3>
+                                    <p className='text-slate-400 mb-6'>Choisissez un objet à abandonner pour : <span className='text-blue-400'>{itemToSwap.name}</span></p>
+                                    <div className='space-y-3'>
+                                        {hero.inventory.map((item) => (
+                                            <button key={item.id} onClick={() => replaceItem(item.id)} className='w-full p-4 bg-slate-800 border border-slate-700 hover:border-red-500 text-left rounded-xl transition-all group'>
+                                                <div className='flex justify-between items-center'>
+                                                    <span className='font-bold'>{item.name}</span>
+                                                    <span className='text-xs text-red-500 opacity-0 group-hover:opacity-100 uppercase'>Remplacer</span>
+                                                </div>
+                                            </button>
+                                        ))}
+                                        <button onClick={() => setItemToSwap(null)} className='w-full py-3 mt-4 text-slate-500 font-bold hover:text-white'>IGNORER LE NOUVEL OBJET</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Navigation */}
+                        {!currentRoom.monster && !fightResult && !itemToSwap && (
+                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                                 {currentRoom.nextRoomIds.length > 0 ? (
                                     currentRoom.nextRoomIds.map((nextId) => (
-                                        <button
-                                            key={nextId}
-                                            onClick={() => handleNextRoom(nextId)}
-                                            className='p-5 bg-slate-800/80 border-2 border-amber-900/50 rounded-xl text-yellow-100 font-bold hover:border-yellow-500 hover:bg-slate-700 transition-all text-left shadow-lg'
-                                        >
-                                            ➡️ SALLE SUIVANTE
-                                        </button>
+                                        <button key={nextId} onClick={() => handleNextRoom(nextId)} className='p-5 bg-slate-800 border-2 border-amber-900/50 rounded-xl text-yellow-100 font-bold hover:border-yellow-500 transition-all'>➡️ SALLE SUIVANTE</button>
                                     ))
                                 ) : (
-                                    <div className='col-span-2 p-10 bg-gradient-to-r from-yellow-700 to-orange-800 rounded-2xl text-center border-4 border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.3)]'>
-                                        <h3 className='text-4xl font-black text-white mb-4 italic tracking-tighter'>🏆 CHAMPION DE MARANELLO</h3>
-                                        <button onClick={() => navigate("/")} className='px-10 py-3 bg-white text-black font-black rounded-full hover:scale-105 transition-transform'>RETOUR AU GARAGE</button>
-                                    </div>
+                                    <button onClick={() => navigate("/")} className='col-span-2 p-10 bg-yellow-600 text-black font-black rounded-2xl'>🏁 VICTOIRE FINALE : RETOUR AU GARAGE</button>
                                 )}
                             </div>
                         )}
                     </div>
 
-                    <div className='lg:col-span-1'>
-                        <div className='bg-slate-900 border-4 border-amber-900 rounded-2xl p-6 sticky top-6 shadow-2xl'>
-                            <h4 className='text-orange-500 font-black mb-6 border-b border-amber-900/50 pb-2 uppercase tracking-widest text-sm'>Statistiques du Pilote</h4>
-                            
-                            <div className='space-y-6'>
+                    {/* Sidebar Stats & Inventaire */}
+                    <div className='lg:col-span-1 space-y-6'>
+                        <div className='bg-slate-900 border-4 border-amber-900 rounded-2xl p-6 shadow-2xl'>
+                            <h4 className='text-orange-500 font-black mb-4 uppercase tracking-widest text-sm'>Statistiques</h4>
+                            <div className='space-y-4'>
                                 <div>
-                                    <div className='flex justify-between text-[10px] font-black text-red-500 mb-1 uppercase tracking-tighter'>
-                                        <span>Points de Structure</span>
-                                        <span>{hero.hp} / 100</span>
-                                    </div>
-                                    <div className='h-4 bg-black rounded-full border border-slate-800 overflow-hidden p-0.5 shadow-inner'>
-                                        <div 
-                                            className={`h-full rounded-full transition-all duration-1000 ${hero.hp < 30 ? 'bg-red-600 animate-pulse' : 'bg-gradient-to-r from-red-600 to-red-400'}`}
-                                            style={{ width: `${Math.max(0, hero.hp)}%` }}
-                                        ></div>
-                                    </div>
+                                    <div className='flex justify-between text-[10px] font-black text-red-500 mb-1 uppercase'><span>Points de Vie</span><span>{hero.hp}/100</span></div>
+                                    <div className='h-3 bg-black rounded-full p-0.5 border border-slate-800'><div className='h-full bg-red-600 rounded-full transition-all' style={{ width: `${Math.max(0, hero.hp)}%` }}></div></div>
                                 </div>
-
-                                <div className='grid grid-cols-2 gap-4'>
-                                    <div className='p-3 bg-slate-800/50 rounded-lg border border-slate-700 text-center shadow-inner'>
-                                        <p className='text-[10px] text-slate-500 font-bold uppercase mb-1'>Attaque</p>
-                                        <p className='text-2xl font-black text-white font-mono'>{hero.atk}</p>
-                                    </div>
-                                    <div className='p-3 bg-slate-800/50 rounded-lg border border-slate-700 text-center shadow-inner'>
-                                        <p className='text-[10px] text-slate-500 font-bold uppercase mb-1'>Défense</p>
-                                        <p className='text-2xl font-black text-white font-mono'>{hero.res}</p>
-                                    </div>
+                                <div className='grid grid-cols-2 gap-2 text-center'>
+                                    <div className='p-2 bg-slate-800 rounded border border-slate-700'><p className='text-[10px] text-slate-500 uppercase'>ATK</p><p className='font-bold'>{hero.atk}</p></div>
+                                    <div className='p-2 bg-slate-800 rounded border border-slate-700'><p className='text-[10px] text-slate-500 uppercase'>RES</p><p className='font-bold'>{hero.res}</p></div>
                                 </div>
-
-                                <div className='p-5 bg-gradient-to-b from-yellow-500/10 to-transparent border-2 border-yellow-600/30 rounded-2xl text-center shadow-xl'>
-                                    <p className='text-[10px] text-yellow-600 font-black uppercase mb-1 tracking-widest'>Butin de course</p>
-                                    <p className='text-5xl font-black text-yellow-400 font-mono tracking-tighter'>{hero.gold}<span className='text-lg ml-1 text-yellow-600'>G</span></p>
-                                </div>
+                                <div className='p-4 bg-yellow-500/10 border border-yellow-600/50 rounded-xl text-center'><p className='text-2xl font-black text-yellow-400'>{hero.gold}G</p></div>
                             </div>
+                        </div>
 
-                            <div className='mt-8 pt-6 border-t border-amber-900/30'>
-                                <p className='text-[10px] text-slate-500 font-black uppercase mb-4 tracking-widest'>Radar de Course</p>
-                                <div className='flex gap-1.5'>
-                                    {dungeon.rooms.map((r) => (
-                                        <div 
-                                            key={r.id} 
-                                            className={`h-2 flex-1 rounded-full transition-colors ${r.index === currentRoomIndex ? 'bg-orange-500 shadow-[0_0_8px_rgba(234,88,12,0.6)]' : r.index < currentRoomIndex ? 'bg-amber-900/50' : 'bg-slate-800'}`}
-                                        />
-                                    ))}
-                                </div>
+                        <div className='bg-slate-900 border-4 border-blue-900 rounded-2xl p-6 shadow-2xl'>
+                            <h4 className='text-blue-500 font-black mb-4 uppercase tracking-widest text-sm'>Inventaire ({hero.inventory.length}/{INVENTORY_SIZE})</h4>
+                            <div className='space-y-2'>
+                                {hero.inventory.length > 0 ? hero.inventory.map((item, i) => (
+                                    <div key={i} className='p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-sm flex justify-between'>
+                                        <span className='font-bold text-slate-300'>{item.name}</span>
+                                        <span className='text-blue-400 font-mono text-xs'>+{item.atk || item.res || item.hp}</span>
+                                    </div>
+                                )) : <p className='text-slate-600 text-xs text-center italic'>Votre coffre est vide...</p>}
                             </div>
                         </div>
                     </div>
