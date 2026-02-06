@@ -28,80 +28,6 @@ interface DungeonMap {
 	rooms: Room[];
 }
 
-const FAKE_DUNGEON: DungeonMap = {
-	id: "dungeon-001",
-	rooms: [
-		{
-			id: "room-1",
-			index: 0,
-			dialogue:
-				"Vous entrez dans une salle froide et humide. Des torches accrochées aux murs vacillent faiblement.",
-			monster: null,
-			nextRoomIds: ["room-2"],
-		},
-		{
-			id: "room-2",
-			index: 1,
-			dialogue:
-				"Un bruit de grattement résonne dans l'obscurité. Vous apercevez une silhouette bouger...",
-			monster: {
-				id: "rat_01",
-				name: "Rat d'égout",
-				stats: { hp: 30, atk: 3, res: 1, vit: 8, gold: 10 },
-			},
-			nextRoomIds: ["room-3"],
-		},
-		{
-			id: "room-3",
-			index: 2,
-			dialogue:
-				"Vous avancez prudemment. Des ossements jonchent le sol. L'odeur devient plus fétide.",
-			monster: {
-				id: "skeleton_01",
-				name: "Squelette Guerrier",
-				stats: { hp: 45, atk: 5, res: 3, vit: 6, gold: 25 },
-			},
-			nextRoomIds: ["room-4", "room-5"],
-		},
-		{
-			id: "room-4",
-			index: 3,
-			dialogue:
-				"Une chambre remplie de trésors anciens. Une aura mystérieuse émane de ces objets.",
-			monster: {
-				id: "wizard_01",
-				name: "Sorcier des Ombres",
-				stats: { hp: 35, atk: 8, res: 2, vit: 7, gold: 40 },
-			},
-			nextRoomIds: ["room-6"],
-		},
-		{
-			id: "room-5",
-			index: 3,
-			dialogue:
-				"Un tunnel étroit qui sent la bête. Des griffes ont creusé des marques profondes dans la pierre.",
-			monster: {
-				id: "wolf_01",
-				name: "Loup Gris",
-				stats: { hp: 50, atk: 6, res: 2, vit: 10, gold: 35 },
-			},
-			nextRoomIds: ["room-6"],
-		},
-		{
-			id: "room-6",
-			index: 4,
-			dialogue:
-				"Vous approchez de la chambre du boss. Un sentiment d'oppression vous envahit. L'air crépite d'électricité.",
-			monster: {
-				id: "dragon_01",
-				name: "Dragon Ancien",
-				stats: { hp: 150, atk: 12, res: 8, vit: 5, gold: 500 },
-			},
-			nextRoomIds: [],
-		},
-	],
-};
-
 export function meta({}: Route.MetaArgs) {
 	return [
 		{ title: "Jeu - Maranello Speedrun" },
@@ -128,15 +54,12 @@ export default function Game({ params }: Route.ComponentProps) {
 	useEffect(() => {
 		const fetchHero = async () => {
 			try {
-				const response = await fetch(
-					`http://localhost:3000/hero/${heroId}`,
-					{
-						method: "GET",
-						headers: {
-							"Content-Type": "application/json",
-						},
+				const response = await fetch(`http://localhost:3000/hero/${heroId}`, {
+					method: "GET",
+					headers: {
+						"Content-Type": "application/json",
 					},
-				);
+				});
 
 				if (!response.ok) {
 					throw new Error(`Erreur ${response.status}: ${response.statusText}`);
