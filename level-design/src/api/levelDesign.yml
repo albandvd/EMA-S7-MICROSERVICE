@@ -11,7 +11,7 @@ servers:
 
 paths:
   /levelDesign/generate:
-    post:
+    get:
       summary: Générer un donjon aléatoire
       description: >
         Crée une nouvelle structure de donjon. Aucune configuration n'est requise.
