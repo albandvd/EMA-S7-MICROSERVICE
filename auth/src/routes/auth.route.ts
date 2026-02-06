@@ -10,7 +10,7 @@ router.get("/auth/health-check", (_req: Request, res: Response) => {
 router.post("/auth/login", async (_req: Request, res: Response) => {
     try {
         const result = await login(_req.body);
-        res.cookie('token', result.token, { httpOnly: true, secure: true });
+        res.cookie('token', result.token, { httpOnly: true, secure: false, sameSite: 'none' });
         res.status(result.message === "Login successful" ? 200 : 401).json(result.message);
     } catch (error) {
         res.status(500).send({ message: "Internal server error", error });

@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 
 export default function LoginForm() {
 	const [login, setLogin] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
+	const navigate = useNavigate();
 
 	const handleSubmit = async (e: React.SubmitEvent) => {
 		e.preventDefault();
@@ -12,8 +14,19 @@ export default function LoginForm() {
 		setLoading(true);
 
 		try {
-			//TODO: Implement API call for login
-			console.log("Données formulaire :", login, password);
+			const response = await fetch("http://localhost:3000/auth/login", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				credentials: "include",
+				body: JSON.stringify({
+					"email": login,
+					password,
+				}),
+			});
+			navigate("/");
+			console.log("Données formulaire :", response);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Une erreur est survenue");
 		} finally {
