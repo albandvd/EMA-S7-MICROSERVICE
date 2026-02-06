@@ -28,12 +28,12 @@ const BOSS_DB: Monster[] = [
 	{
 		id: "clebart",
 		name: "Cléb'art le Terrible",
-		stats: { hp: 150, atk: 28, res: 15, vit: 25, gold: 100 },
+		stats: { hp: 150, atk: 15, res: 10, vit: 25, gold: 100 },
 	},
 	{
 		id: "boulangeart",
 		name: "Boulange'art le Cruel",
-		stats: { hp: 150, atk: 35, res: 15, vit: 15, gold: 100 },
+		stats: { hp: 100, atk: 30, res: 12, vit: 0, gold: 100 },
 	},
 ];
 
